@@ -127,8 +127,8 @@
     box-shadow: var(--shadow);
     display: grid;
     grid-template-columns: 1.3fr 1fr;
-    overflow: hidden;
   }
+  .pass-main { border-radius: var(--radius-lg) 0 0 var(--radius-lg); }
 
   @media (max-width: 640px) {
     .pass { grid-template-columns: 1fr; }
@@ -188,12 +188,26 @@
   .pass-stub {
     background: var(--stub);
     border-left: 1px dashed var(--line);
+    border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
     padding: 26px 26px;
     display: flex;
     flex-direction: column;
     gap: 14px;
     justify-content: center;
+    position: relative;
   }
+  .pass-stub::before, .pass-stub::after {
+    content: "";
+    position: absolute;
+    left: -11px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--bg);
+  }
+  .pass-stub::before { top: -11px; }
+  .pass-stub::after { bottom: -11px; }
+  @media (max-width: 640px) { .pass-stub::before, .pass-stub::after { display: none; } }
   .pass-stub .k { font-family:'IBM Plex Mono', monospace; font-size: 11px; letter-spacing:.08em; text-transform: uppercase; color: var(--ink-faint); }
   .pass-stub .v { font-weight: 700; font-size: 15px; }
   .pass-stub .travelers { display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;}
@@ -389,9 +403,115 @@
   @media (prefers-reduced-motion: no-preference) {
     .link-chip, a { transition: color .15s ease, border-color .15s ease; }
   }
+
+  /* ---------- Hero illustration ---------- */
+
+  .hero-art {
+    margin-top: 30px;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+    background: var(--surface-2);
+  }
+  .hero-art svg { display: block; width: 100%; height: auto; }
+  .hero-sky-top { stop-color: var(--gold-soft); }
+  .hero-sky-bottom { stop-color: var(--bg); }
+  .hero-sun { fill: var(--gold); opacity: .9; }
+  .hero-sun-halo { fill: var(--gold-soft); }
+  .hero-silhouette { fill: var(--ink); opacity: .82; }
+  .hero-sea { fill: var(--teal); opacity: .85; }
+  .hero-trail { stroke: var(--ink-faint); }
+  .hero-plane { fill: var(--ink); }
+
+  /* ---------- Day icon badge ---------- */
+
+  .day-head { align-items: center; }
+  .day-icon-badge {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: var(--teal-soft);
+    color: var(--teal-strong);
+  }
+  .day-icon-badge.pty { background: var(--gold-soft); color: var(--gold); }
+  .day-icon-badge svg { width: 23px; height: 23px; }
+
+  /* ---------- Floating day rail ---------- */
+
+  .day-rail {
+    position: fixed;
+    right: 22px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 9px;
+    z-index: 20;
+  }
+  .day-rail a {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--line);
+    text-decoration: none;
+    position: relative;
+    transition: background .2s ease, transform .2s ease;
+  }
+  .day-rail a:hover { transform: scale(1.3); }
+  .day-rail a.active { background: var(--teal); transform: scale(1.35); }
+  .day-rail a .tip {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--ink);
+    color: var(--bg);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 4px 9px;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .15s ease;
+  }
+  .day-rail a:hover .tip { opacity: 1; }
+  @media (max-width: 1180px) { .day-rail { display: none; } }
+
+  /* ---------- Scroll reveal ---------- */
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity .6s ease, transform .6s ease;
+  }
+  .reveal.in-view { opacity: 1; transform: translateY(0); }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+  }
 </style>
 </head>
 <body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-plane" viewBox="0 0 24 24"><path d="M17.8 19.2 16 11l3.5-3.5c.8-.8.8-2.2 0-3s-2.2-.8-3 0L13 8l-8.2-1.8c-.4-.1-.8.1-1 .4l-.3.6c-.2.4-.1.8.2 1.1L9 12l-3 3H3l-1 2 3 1 1 3 2-1v-3l3-3 3.3 5.3c.3.3.7.4 1.1.2l.6-.3c.3-.2.5-.6.4-1Z"/></symbol>
+    <symbol id="i-temple" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2 14 6h-4l2-3.8Z"/><path d="M12 5 9 9h6l-3-4Z"/><rect x="7" y="9" width="10" height="9"/><rect x="4" y="19.5" width="16" height="1.6" rx=".8"/></symbol>
+    <symbol id="i-pawprint" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="16" r="3.4"/><circle cx="6.5" cy="10" r="1.8"/><circle cx="11" cy="7" r="1.8"/><circle cx="15.5" cy="7.5" r="1.8"/><circle cx="18.5" cy="11.5" r="1.8"/></symbol>
+    <symbol id="i-van" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8.5" width="14" height="7.5" rx="1.6"/><path d="M16.5 11h2.6l2 2.6V16h-4.6"/><circle cx="7" cy="17.5" r="1.7"/><circle cx="16" cy="17.5" r="1.7"/></symbol>
+    <symbol id="i-anchor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5.5" r="2"/><path d="M12 7.5v11.5"/><path d="M8.2 11h7.6"/><path d="M5.5 14.5a6.5 6.5 0 0 0 13 0"/></symbol>
+    <symbol id="i-droplet" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5s6.2 7.4 6.2 11.6a6.2 6.2 0 1 1-12.4 0C5.8 9.9 12 2.5 12 2.5Z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v3M12 18.5v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2.5 12h3M18.5 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></symbol>
+    <symbol id="i-bag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></symbol>
+    <symbol id="i-suitcase" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="8" width="17" height="11" rx="2"/><path d="M9 8V6.3A2.3 2.3 0 0 1 11.3 4h1.4A2.3 2.3 0 0 1 15 6.3V8"/><path d="M3.5 13h17"/></symbol>
+  </defs>
+</svg>
 
 <div class="wrap">
 
@@ -399,6 +519,46 @@
     <p class="eyebrow">Family Trip Itinerary — Thailand</p>
     <h1 class="title">방콕 &amp; 파타야<br>패밀리 트립</h1>
     <p class="subtitle">두 가족, 어른 4명과 청소년 4명(만 14·14·13·12세)이 함께하는 8박 9일. 방콕 시내에서 시작해 파타야 해변과 풀빌라를 거쳐, 다시 방콕에서 마무리합니다.</p>
+
+    <div class="hero-art">
+      <svg viewBox="0 0 1200 260" preserveAspectRatio="xMidYMax slice" role="img" aria-label="방콕 사원과 파타야 해변을 그린 일러스트">
+        <defs>
+          <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" class="hero-sky-top"/>
+            <stop offset="100%" class="hero-sky-bottom"/>
+          </linearGradient>
+        </defs>
+        <rect x="0" y="0" width="1200" height="260" fill="url(#skyGrad)"/>
+        <circle class="hero-sun-halo" cx="965" cy="88" r="72"/>
+        <circle class="hero-sun" cx="965" cy="88" r="44"/>
+
+        <path class="hero-trail" d="M60,70 Q170,20 300,55" fill="none" stroke-width="2" stroke-dasharray="3 8" stroke-linecap="round"/>
+        <use href="#i-plane" class="hero-plane" x="270" y="34" width="34" height="34" transform="rotate(18 287 51)"/>
+
+        <g class="hero-silhouette">
+          <rect x="30" y="150" width="24" height="70"/>
+          <rect x="60" y="168" width="16" height="52"/>
+          <rect x="84" y="128" width="28" height="92"/>
+          <rect x="118" y="178" width="15" height="42"/>
+          <rect x="140" y="158" width="20" height="62"/>
+
+          <polygon points="215,220 345,220 320,178 240,178"/>
+          <polygon points="250,178 310,178 292,142 268,142"/>
+          <polygon points="270,142 290,142 283,112 277,112"/>
+          <polygon points="280,112 280,90 283,90 283,112"/>
+          <circle cx="281.5" cy="87" r="4.5"/>
+
+          <path d="M1005,224 C992,180 986,132 993,86" fill="none" stroke="var(--ink)" stroke-width="11" stroke-linecap="round"/>
+          <path d="M993,86 Q950,66 912,84" fill="none" stroke="var(--ink)" stroke-width="7" stroke-linecap="round"/>
+          <path d="M993,86 Q962,58 928,58" fill="none" stroke="var(--ink)" stroke-width="7" stroke-linecap="round"/>
+          <path d="M993,86 Q984,48 958,28" fill="none" stroke="var(--ink)" stroke-width="7" stroke-linecap="round"/>
+          <path d="M993,86 Q1012,50 1044,36" fill="none" stroke="var(--ink)" stroke-width="7" stroke-linecap="round"/>
+          <path d="M993,86 Q1030,68 1062,88" fill="none" stroke="var(--ink)" stroke-width="7" stroke-linecap="round"/>
+        </g>
+
+        <path class="hero-sea" d="M0,224 Q30,206 60,224 T120,224 T180,224 T240,224 T300,224 T360,224 T420,224 T480,224 T540,224 T600,224 T660,224 T720,224 T780,224 T840,224 T900,224 T960,224 T1020,224 T1080,224 T1140,224 T1200,224 L1200,260 L0,260 Z"/>
+      </svg>
+    </div>
 
     <div class="pass">
       <div class="pass-main">
@@ -440,6 +600,18 @@
     </div>
   </header>
 
+  <nav class="day-rail" aria-label="일자별 바로가기">
+    <a href="#day1" data-day="day1"><span class="tip">Day 1 · 출국</span></a>
+    <a href="#day2" data-day="day2"><span class="tip">Day 2 · 올드타운</span></a>
+    <a href="#day3" data-day="day3"><span class="tip">Day 3 · 사파리월드</span></a>
+    <a href="#day4" data-day="day4"><span class="tip">Day 4 · 파타야 이동</span></a>
+    <a href="#day5" data-day="day5"><span class="tip">Day 5 · 꼬란섬</span></a>
+    <a href="#day6" data-day="day6"><span class="tip">Day 6 · 풀빌라</span></a>
+    <a href="#day7" data-day="day7"><span class="tip">Day 7 · 풀빌라</span></a>
+    <a href="#day8" data-day="day8"><span class="tip">Day 8 · 아이콘시암</span></a>
+    <a href="#day9" data-day="day9"><span class="tip">Day 9 · 귀국</span></a>
+  </nav>
+
   <section class="glance">
     <h2 class="section-head">전체 일정 한눈에 보기</h2>
     <div class="glance-scroll">
@@ -463,8 +635,9 @@
   </section>
 
   <!-- ============ DAY 1 ============ -->
-  <section class="day" id="day1">
+  <section class="day reveal" id="day1">
     <div class="day-head">
+      <div class="day-icon-badge"><svg><use href="#i-plane"/></svg></div>
       <div class="day-num mono">01</div>
       <div class="day-head-text">
         <div class="day-date">2027.01.26 (화)</div>
@@ -527,8 +700,9 @@
   </section>
 
   <!-- ============ DAY 2 ============ -->
-  <section class="day" id="day2">
+  <section class="day reveal" id="day2">
     <div class="day-head">
+      <div class="day-icon-badge"><svg><use href="#i-temple"/></svg></div>
       <div class="day-num mono">02</div>
       <div class="day-head-text">
         <div class="day-date">2027.01.27 (수)</div>
@@ -583,8 +757,9 @@
   </section>
 
   <!-- ============ DAY 3 ============ -->
-  <section class="day" id="day3">
+  <section class="day reveal" id="day3">
     <div class="day-head">
+      <div class="day-icon-badge"><svg><use href="#i-pawprint"/></svg></div>
       <div class="day-num mono">03</div>
       <div class="day-head-text">
         <div class="day-date">2027.01.28 (목)</div>
@@ -622,8 +797,9 @@
   </section>
 
   <!-- ============ DAY 4 ============ -->
-  <section class="day" id="day4">
+  <section class="day reveal" id="day4">
     <div class="day-head">
+      <div class="day-icon-badge pty"><svg><use href="#i-van"/></svg></div>
       <div class="day-num mono">04</div>
       <div class="day-head-text">
         <div class="day-date">2027.01.29 (금)</div>
@@ -670,8 +846,9 @@
   </section>
 
   <!-- ============ DAY 5 ============ -->
-  <section class="day" id="day5">
+  <section class="day reveal" id="day5">
     <div class="day-head">
+      <div class="day-icon-badge pty"><svg><use href="#i-anchor"/></svg></div>
       <div class="day-num mono">05</div>
       <div class="day-head-text">
         <div class="day-date">2027.01.30 (토)</div>
@@ -711,8 +888,9 @@
   </section>
 
   <!-- ============ DAY 6 ============ -->
-  <section class="day" id="day6">
+  <section class="day reveal" id="day6">
     <div class="day-head">
+      <div class="day-icon-badge pty"><svg><use href="#i-droplet"/></svg></div>
       <div class="day-num mono">06</div>
       <div class="day-head-text">
         <div class="day-date">2027.01.31 (일)</div>
@@ -755,8 +933,9 @@
   </section>
 
   <!-- ============ DAY 7 ============ -->
-  <section class="day" id="day7">
+  <section class="day reveal" id="day7">
     <div class="day-head">
+      <div class="day-icon-badge pty"><svg><use href="#i-sun"/></svg></div>
       <div class="day-num mono">07</div>
       <div class="day-head-text">
         <div class="day-date">2027.02.01 (월)</div>
@@ -787,8 +966,9 @@
   </section>
 
   <!-- ============ DAY 8 ============ -->
-  <section class="day" id="day8">
+  <section class="day reveal" id="day8">
     <div class="day-head">
+      <div class="day-icon-badge"><svg><use href="#i-bag"/></svg></div>
       <div class="day-num mono">08</div>
       <div class="day-head-text">
         <div class="day-date">2027.02.02 (화)</div>
@@ -838,8 +1018,9 @@
   </section>
 
   <!-- ============ DAY 9 ============ -->
-  <section class="day" id="day9">
+  <section class="day reveal" id="day9">
     <div class="day-head">
+      <div class="day-icon-badge"><svg><use href="#i-suitcase"/></svg></div>
       <div class="day-num mono">09</div>
       <div class="day-head-text">
         <div class="day-date">2027.02.03 (수)</div>
@@ -901,5 +1082,39 @@
   </footer>
 
 </div>
+
+<script>
+  (function () {
+    var reveals = document.querySelectorAll('.reveal');
+    var railLinks = document.querySelectorAll('.day-rail a');
+    var days = document.querySelectorAll('.day');
+
+    if ('IntersectionObserver' in window) {
+      var revealObserver = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in-view');
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+      reveals.forEach(function (el) { revealObserver.observe(el); });
+
+      var navObserver = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          var link = document.querySelector('.day-rail a[data-day="' + entry.target.id + '"]');
+          if (!link) return;
+          if (entry.isIntersecting) {
+            railLinks.forEach(function (a) { a.classList.remove('active'); });
+            link.classList.add('active');
+          }
+        });
+      }, { threshold: 0.5 });
+      days.forEach(function (el) { navObserver.observe(el); });
+    } else {
+      reveals.forEach(function (el) { el.classList.add('in-view'); });
+    }
+  })();
+</script>
 </body>
 </html>
