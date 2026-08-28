@@ -152,7 +152,7 @@ function dayCardHTML(day) {
     <div class="day-card" data-day-id="${day.id}">
       <div class="day-card-head">${dayHeadHTML(day)}</div>
       <div class="day-card-body">
-        ${day.events.map((ev) => eventRowHTML(day, ev)).join('') || '<p class="empty-hint">아직 등록된 일정이 없습니다.</p>'}
+        ${(day.events || []).map((ev) => eventRowHTML(day, ev)).join('') || '<p class="empty-hint">아직 등록된 일정이 없습니다.</p>'}
         ${addingEventFor === day.id ? eventFormHTML(day.id, null) : `<button class="btn btn-sm" data-act="add-event" data-id="${day.id}" style="margin-top:10px;">+ 항목 추가</button>`}
         ${hotelBoxHTML(day)}
       </div>
@@ -249,22 +249,27 @@ function krw(thb) {
 }
 
 const fxInput = document.getElementById('fxRate');
-fxInput.value = exchangeRate();
-fxInput.addEventListener('change', () => {
-  const v = Number(fxInput.value) || 41;
-  localStorage.setItem('krwPerThb', v);
-  renderSummary();
-  renderExpenses();
-});
+if (fxInput) {
+  fxInput.value = exchangeRate();
+  fxInput.addEventListener('change', () => {
+    const v = Number(fxInput.value) || 41;
+    localStorage.setItem('krwPerThb', v);
+    renderSummary();
+    renderExpenses();
+  });
+}
 
-document.getElementById('paymentFilter').addEventListener('click', (e) => {
-  const btn = e.target.closest('button[data-filter]');
-  if (!btn) return;
-  paymentFilter = btn.dataset.filter;
-  document.querySelectorAll('#paymentFilter .seg').forEach((b) => b.classList.toggle('active', b === btn));
-  renderSummary();
-  renderExpenses();
-});
+const paymentFilterEl = document.getElementById('paymentFilter');
+if (paymentFilterEl) {
+  paymentFilterEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-filter]');
+    if (!btn) return;
+    paymentFilter = btn.dataset.filter;
+    document.querySelectorAll('#paymentFilter .seg').forEach((b) => b.classList.toggle('active', b === btn));
+    renderSummary();
+    renderExpenses();
+  });
+}
 
 function filteredExpenses() {
   return paymentFilter === 'all' ? expenses : expenses.filter((e) => (e.payment_method || '카드') === paymentFilter);
@@ -435,7 +440,15 @@ lightbox.addEventListener('click', () => lightbox.classList.remove('open'));
     if (!session.authed) { window.location.href = '/login.html'; return; }
   } catch (e) { return; }
 
-  document.getElementById('expenseForm').date.value = new Date().toISOString().slice(0, 10);
-  await loadDays(); // gallery grouping needs `days` populated first
-  await Promise.all([loadExpenses(), loadImages()]);
+  try {
+    document.getElementById('expenseForm').date.value = new Date().toISOString().slice(0, 10);
+    await loadDays(); // gallery grouping needs `days` populated first
+    await Promise.all([loadExpenses(), loadImages()]);
+  } catch (err) {
+    console.error('init failed:', err);
+    const container = document.getElementById('daysContainer');
+    if (container) {
+      container.innerHTML = `<p class="empty-hint">불러오는 중 오류가 발생했습니다: ${esc(err.message || String(err))}<br>새로고침해도 안 되면 화면을 캡처해서 알려주세요.</p>`;
+    }
+  }
 })();
