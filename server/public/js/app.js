@@ -308,14 +308,14 @@ function renderExpenses() {
   }
   tbody.innerHTML = list.map((e) => `
     <tr>
-      <td class="mono">${esc(e.date)}</td>
-      <td><span class="cat-pill">${esc(e.category)}</span></td>
-      <td><span class="pm-pill">${esc(e.payment_method || '카드')}</span></td>
-      <td>${esc(e.description)}</td>
-      <td>${esc(e.payer)}</td>
-      <td>${esc(e.memo || '')}</td>
-      <td class="amount"><span class="amount-krw">${krw(e.amount_thb)}원</span><span class="amount-thb">฿${Number(e.amount_thb).toLocaleString('ko-KR')}</span></td>
-      <td><button class="icon-btn danger" data-id="${e.id}" data-act="del-expense">🗑</button></td>
+      <td class="mono" data-label="날짜">${esc(e.date)}</td>
+      <td data-label="분류"><span class="cat-pill">${esc(e.category)}</span></td>
+      <td data-label="결제수단"><span class="pm-pill">${esc(e.payment_method || '카드')}</span></td>
+      <td data-label="내용">${esc(e.description)}</td>
+      <td data-label="결제자">${esc(e.payer)}</td>
+      <td data-label="메모">${esc(e.memo || '')}</td>
+      <td class="amount" data-label="금액"><span class="amount-krw">${krw(e.amount_thb)}원</span><span class="amount-thb">฿${Number(e.amount_thb).toLocaleString('ko-KR')}</span></td>
+      <td class="row-del" data-label=""><button class="btn btn-sm btn-danger" data-id="${e.id}" data-act="del-expense">🗑 삭제</button></td>
     </tr>`).join('');
 }
 

@@ -254,3 +254,38 @@ td.amount { text-align: right; font-family: 'IBM Plex Mono', monospace; font-wei
   .event-row { grid-template-columns: 48px 1fr; }
   .row-actions { grid-column: 1 / -1; justify-content: flex-end; }
 }
+
+/* ---------- Expense table -> stacked cards on narrow screens ---------- */
+@media (max-width: 700px) {
+  .table-wrap { border: none; background: none; box-shadow: none; overflow: visible; }
+  .table-wrap table, .table-wrap thead, .table-wrap tbody, .table-wrap tr, .table-wrap td { display: block; width: 100%; }
+  .table-wrap thead { display: none; }
+  .table-wrap tbody tr {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md);
+    margin-bottom: 12px; padding: 12px 15px; box-shadow: var(--shadow);
+  }
+  .table-wrap tbody tr:hover { background: var(--surface); }
+  .table-wrap td {
+    border: none; padding: 5px 0; white-space: normal; min-width: 0;
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  }
+  .table-wrap td[data-label]::before {
+    content: attr(data-label); font-family: 'IBM Plex Mono', monospace; font-size: 10.5px;
+    color: var(--ink-faint); text-transform: uppercase; letter-spacing: .04em; flex-shrink: 0;
+  }
+  .table-wrap td[data-label=""]::before { content: none; }
+  .table-wrap td.amount { flex-direction: column; align-items: flex-end; gap: 2px; }
+  .table-wrap td.amount::before { align-self: flex-start; }
+  .table-wrap td.row-del {
+    justify-content: flex-end; padding-top: 10px; margin-top: 6px; border-top: 1px dashed var(--line);
+  }
+}
+
+/* ---------- Footer ---------- */
+.app-footer {
+  max-width: 920px; margin: 0 auto; padding: 20px 20px 50px; text-align: center;
+  color: var(--ink-faint); font-size: 12px; font-family: 'IBM Plex Mono', monospace;
+}
+.app-footer .divider {
+  width: 40px; height: 2px; background: var(--line); margin: 0 auto 14px; border-radius: 2px;
+}
