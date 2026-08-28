@@ -495,6 +495,79 @@
   @media (prefers-reduced-motion: reduce) {
     .reveal { opacity: 1; transform: none; transition: none; }
   }
+
+  /* ---------- Agency polish: paper texture, stats strip, stamp badges ---------- */
+
+  body {
+    background-image: radial-gradient(circle, var(--line) 1px, transparent 1px);
+    background-size: 22px 22px;
+    background-attachment: fixed;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) body { background-image: radial-gradient(circle, var(--line) 1px, transparent 1px); }
+  }
+
+  .stats-strip {
+    margin-top: 30px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow);
+  }
+  .stats-strip div {
+    padding: 20px 10px;
+    text-align: center;
+    border-left: 1px dashed var(--line);
+  }
+  .stats-strip div:first-child { border-left: none; }
+  .stats-strip .num {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: clamp(24px, 3.4vw, 32px);
+    color: var(--teal-strong);
+    line-height: 1;
+  }
+  .stats-strip .lbl {
+    margin-top: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  @media (max-width: 560px) {
+    .stats-strip { grid-template-columns: repeat(2, 1fr); }
+    .stats-strip div:nth-child(3) { border-left: none; }
+    .stats-strip div:nth-child(1), .stats-strip div:nth-child(2) { border-bottom: 1px dashed var(--line); }
+  }
+
+  .day-icon-badge {
+    position: relative;
+    box-shadow: 0 0 0 3px var(--bg), 0 0 0 4px var(--line);
+  }
+
+  .hotel-card, .eat-card {
+    transition: transform .18s ease, box-shadow .18s ease;
+  }
+  .hotel-card:hover, .eat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px -2px rgba(40,32,10,.12), 0 14px 28px -14px rgba(40,32,10,.3);
+  }
+
+  .day-title { text-wrap: balance; }
+  .section-head { position: relative; padding-left: 16px; }
+  .section-head::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 4px;
+    bottom: 4px;
+    width: 4px;
+    border-radius: 2px;
+    background: var(--gold);
+  }
 </style>
 </head>
 <body>
@@ -558,6 +631,13 @@
 
         <path class="hero-sea" d="M0,224 Q30,206 60,224 T120,224 T180,224 T240,224 T300,224 T360,224 T420,224 T480,224 T540,224 T600,224 T660,224 T720,224 T780,224 T840,224 T900,224 T960,224 T1020,224 T1080,224 T1140,224 T1200,224 L1200,260 L0,260 Z"/>
       </svg>
+    </div>
+
+    <div class="stats-strip">
+      <div><div class="num mono">9일</div><div class="lbl">8박 일정</div></div>
+      <div><div class="num mono">2</div><div class="lbl">도시 · 방콕/파타야</div></div>
+      <div><div class="num mono">4</div><div class="lbl">숙소</div></div>
+      <div><div class="num mono">8</div><div class="lbl">여행 인원</div></div>
     </div>
 
     <div class="pass">
@@ -751,7 +831,12 @@
       </div>
       <div class="event">
         <div class="event-top"><span class="event-time">17:00</span><span class="event-name">택시로 호텔 복귀 &amp; 휴식</span></div>
-        <p class="event-desc">하루 종일 걸은 날이라 저녁은 숙소에서 편하게 마무리합니다.</p>
+        <p class="event-desc">하루 종일 걸은 날이므로 저녁은 숙소 바로 근처에서 가볍게 마무리합니다.</p>
+      </div>
+      <div class="event type-meal">
+        <div class="event-top"><span class="event-time">19:00</span><span class="event-name">엠쿼티어 헬릭스 푸드코트 저녁</span></div>
+        <p class="event-desc">호텔에서 도보 5분, 프롬퐁 BTS 바로 위 엠쿼티어(EmQuartier) 헬릭스 지구에 있는 푸드코트. 태국식부터 일식·양식까지 취향대로 고를 수 있어 종일 걸어 지친 날 저녁으로 부담 없습니다. 1인 150~300밧(약 6,000~11,500원) 선.</p>
+        <div class="event-links"><a class="link-chip" href="https://www.google.com/maps/search/?api=1&query=EmQuartier+Helix+Quartier+Food+Court+Bangkok" target="_blank" rel="noopener">📍 지도</a></div>
       </div>
     </div>
   </section>
