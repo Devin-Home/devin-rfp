@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const multer = require('multer');
-const db = require('../db/init');
+const store = require('../db/init');
 
 const router = express.Router();
 
@@ -47,24 +47,20 @@ router.post('/uploads', (req, res) => {
 
 // Gallery: list
 router.get('/images', (req, res) => {
-  const rows = db.prepare('SELECT * FROM images ORDER BY uploaded_at DESC, id DESC').all();
-  res.json(rows);
+  res.json(store.getImages());
 });
 
 // Gallery: register an uploaded file as a gallery entry
 router.post('/images', (req, res) => {
   const b = req.body || {};
   if (!b.filename) return res.status(400).json({ error: 'filename이 필요합니다.' });
-  const info = db.prepare('INSERT INTO images (day_id, filename, caption) VALUES (?, ?, ?)')
-    .run(b.day_id || null, b.filename, b.caption || null);
-  res.status(201).json(db.prepare('SELECT * FROM images WHERE id = ?').get(info.lastInsertRowid));
+  res.status(201).json(store.createImage(b));
 });
 
 // Gallery: delete
 router.delete('/images/:id', (req, res) => {
-  const row = db.prepare('SELECT * FROM images WHERE id = ?').get(req.params.id);
+  const row = store.deleteImage(req.params.id);
   if (!row) return res.status(404).json({ error: '이미지를 찾을 수 없습니다.' });
-  db.prepare('DELETE FROM images WHERE id = ?').run(req.params.id);
   const filePath = path.join(uploadsDir, path.basename(row.filename));
   fs.unlink(filePath, () => {});
   res.json({ ok: true });

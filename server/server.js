@@ -4,7 +4,6 @@ const express = require('express');
 const session = require('express-session');
 
 require('./db/init');
-require('./db/seed')();
 
 const requireAuth = require('./middleware/requireAuth');
 const authRoutes = require('./routes/auth');

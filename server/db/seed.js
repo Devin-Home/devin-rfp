@@ -1,17 +1,7 @@
-const db = require('./init');
-
-function seed() {
-  const count = db.prepare('SELECT COUNT(*) AS n FROM days').get().n;
-  if (count > 0) return;
-
-  const insertDay = db.prepare(`
-    INSERT INTO days (day_number, date, title, city, icon, hotel_name, hotel_addr, hotel_note, hotel_map_query, hotel_website, sort_order)
-    VALUES (@day_number, @date, @title, @city, @icon, @hotel_name, @hotel_addr, @hotel_note, @hotel_map_query, @hotel_website, @sort_order)
-  `);
-  const insertEvent = db.prepare(`
-    INSERT INTO events (day_id, time, type, name, desc, map_query, link_url, link_label, sort_order)
-    VALUES (@day_id, @time, @type, @name, @desc, @map_query, @link_url, @link_label, @sort_order)
-  `);
+// Starting itinerary data, loaded into db/store.js the first time the app runs
+// (i.e. when data/trip.json doesn't exist yet). Editing this file afterwards has
+// no effect on an already-seeded install; edit the trip from the web UI instead.
+const seedDays = (function seedDays() {
 
   const days = [
     {
@@ -135,25 +125,7 @@ function seed() {
     },
   ];
 
-  const insertAll = db.transaction((days) => {
-    days.forEach((d, i) => {
-      const info = insertDay.run({
-        day_number: d.day_number, date: d.date, title: d.title, city: d.city, icon: d.icon,
-        hotel_name: d.hotel_name || null, hotel_addr: d.hotel_addr || null, hotel_note: d.hotel_note || null,
-        hotel_map_query: d.hotel_map_query || null, hotel_website: d.hotel_website || null, sort_order: i,
-      });
-      const dayId = info.lastInsertRowid;
-      d.events.forEach((e, j) => {
-        insertEvent.run({
-          day_id: dayId, time: e.time, type: e.type, name: e.name, desc: e.desc || '',
-          map_query: e.map_query || null, link_url: e.link_url || null, link_label: e.link_label || null, sort_order: j,
-        });
-      });
-    });
-  });
+  return days;
+})();
 
-  insertAll(days);
-  console.log('Seeded itinerary with', days.length, 'days.');
-}
-
-module.exports = seed;
+module.exports = seedDays;

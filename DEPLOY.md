@@ -1,6 +1,7 @@
 # 배포 가이드 — 우분투 서버 (nginx + Node WAS)
 
-이 저장소의 `server/`는 일정·가계부·사진을 편집할 수 있는 작은 웹앱(Express + SQLite)입니다.
+이 저장소의 `server/`는 일정·가계부·사진을 편집할 수 있는 작은 웹앱(Express + JSON 파일 저장소)입니다.
+네이티브 컴파일이 필요한 DB 모듈을 쓰지 않아 별도 빌드 도구 없이도 설치됩니다.
 정적 페이지였던 루트의 `index.html`과는 별개로, `server/`가 실제 WAS입니다.
 
 ## 1. 서버에 코드 가져오기
@@ -126,7 +127,7 @@ sudo systemctl restart trip-was
 
 ## 데이터 백업
 
-실 데이터는 서버에만 있습니다 (`server/data/trip.db`, `server/uploads/`). 저장소에는 커밋되지 않으니,
+실 데이터는 서버에만 있습니다 (`server/data/trip.json`, `server/uploads/`). 저장소에는 커밋되지 않으니,
 주기적으로 아래처럼 백업해두는 것을 권장합니다.
 
 ```bash
