@@ -8,16 +8,43 @@
 </head>
 <body>
   <div class="auth-wrap">
-    <form class="auth-card" id="loginForm">
-      <h1>방콕 · 파타야 트립</h1>
-      <p>일행끼리 공유한 비밀번호를 입력하세요.</p>
-      <div class="form-row">
-        <label class="form-label" for="password">비밀번호</label>
-        <input class="form-input" type="password" id="password" name="password" required autofocus>
+    <div class="auth-card">
+      <div class="auth-hero">
+        <svg class="brand-art" viewBox="0 0 380 130" preserveAspectRatio="xMidYMax slice" role="img" aria-label="방콕 사원과 파타야 해변 일러스트">
+          <defs>
+            <linearGradient id="authSky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" class="brand-sky-top"/>
+              <stop offset="100%" class="brand-sky-bottom"/>
+            </linearGradient>
+          </defs>
+          <rect x="0" y="0" width="380" height="130" fill="url(#authSky)"/>
+          <circle class="brand-sun-halo" cx="300" cy="42" r="30"/>
+          <circle class="brand-sun" cx="300" cy="42" r="18"/>
+          <g class="brand-silhouette">
+            <polygon points="55,112 130,112 118,86 68,86"/>
+            <polygon points="75,86 111,86 101,64 85,64"/>
+            <polygon points="87,64 99,64 94,46 92,46"/>
+            <circle cx="93" cy="43" r="2.4"/>
+            <path d="M320,116 C312,90 308,62 313,36" fill="none" stroke="var(--ink)" stroke-width="5" stroke-linecap="round"/>
+            <path d="M313,36 Q290,24 268,34" fill="none" stroke="var(--ink)" stroke-width="3.5" stroke-linecap="round"/>
+            <path d="M313,36 Q296,18 276,18" fill="none" stroke="var(--ink)" stroke-width="3.5" stroke-linecap="round"/>
+            <path d="M313,36 Q330,20 350,26" fill="none" stroke="var(--ink)" stroke-width="3.5" stroke-linecap="round"/>
+          </g>
+          <path class="brand-sea" d="M0,112 Q19,101 38,112 T76,112 T114,112 T152,112 T190,112 T228,112 T266,112 T304,112 T342,112 T380,112 L380,130 L0,130 Z"/>
+        </svg>
       </div>
-      <div class="auth-error" id="authError"></div>
-      <button class="btn btn-primary" type="submit" style="width:100%; margin-top: 6px;">입장하기</button>
-    </form>
+      <form class="auth-body" id="loginForm">
+        <p class="auth-eyebrow">Family Trip · Private</p>
+        <h1>방콕 · 파타야 트립</h1>
+        <p>일행끼리 공유한 비밀번호를 입력하세요.</p>
+        <div class="form-row">
+          <label class="form-label" for="password">비밀번호</label>
+          <input class="form-input" type="password" id="password" name="password" required autofocus>
+        </div>
+        <div class="auth-error" id="authError"></div>
+        <button class="btn btn-primary" type="submit" style="width:100%; margin-top: 8px;">입장하기</button>
+      </form>
+    </div>
   </div>
 
   <script>

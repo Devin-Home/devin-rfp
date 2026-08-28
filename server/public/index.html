@@ -18,11 +18,19 @@
 
   <main class="wrap">
     <section class="view active" id="view-itinerary">
+      <div class="view-head">
+        <h2>일정</h2>
+        <span class="sub">언제든 수정 가능</span>
+      </div>
       <div id="daysContainer"><p class="empty-hint">불러오는 중…</p></div>
       <button class="btn" id="addDayBtn" style="margin-top: 10px;">+ 날짜 추가</button>
     </section>
 
     <section class="view" id="view-expenses">
+      <div class="view-head">
+        <h2>가계부</h2>
+        <span class="sub">금액 단위 밧(฿)</span>
+      </div>
       <div class="summary-strip" id="summaryStrip"></div>
 
       <form class="inline-form" id="expenseForm">
@@ -51,6 +59,10 @@
     </section>
 
     <section class="view" id="view-gallery">
+      <div class="view-head">
+        <h2>사진</h2>
+        <span class="sub">참고 이미지 업로드</span>
+      </div>
       <form class="inline-form" id="imageForm">
         <div class="form-grid">
           <div class="form-row"><label class="form-label">사진 파일</label><input class="form-input" type="file" name="file" accept="image/*" required></div>
