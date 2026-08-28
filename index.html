@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>방콕·파타야 패밀리 트립</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #faf6ec;
+    --surface: #ffffff;
+    --surface-2: #f2ead4;
+    --stub: #eee2c2;
+    --ink: #221d15;
+    --ink-soft: #6f6650;
+    --ink-faint: #9b9278;
+    --line: #e6dcbf;
+    --teal: #0e6b63;
+    --teal-strong: #0a4f49;
+    --teal-soft: #dcece7;
+    --gold: #a97a24;
+    --gold-soft: #f2e2ba;
+    --shadow: 0 1px 2px rgba(40, 32, 10, 0.06), 0 8px 24px -12px rgba(40, 32, 10, 0.18);
+    --radius-lg: 22px;
+    --radius-md: 14px;
+    --radius-sm: 8px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16130e;
+      --surface: #201b13;
+      --surface-2: #2a2317;
+      --stub: #332a19;
+      --ink: #f2ead6;
+      --ink-soft: #b9ae8f;
+      --ink-faint: #86795c;
+      --line: #3a3320;
+      --teal: #57c9bb;
+      --teal-strong: #7fe0d3;
+      --teal-soft: #1c3733;
+      --gold: #e7b962;
+      --gold-soft: #3a2c15;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 28px -14px rgba(0, 0, 0, 0.6);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #16130e;
+    --surface: #201b13;
+    --surface-2: #2a2317;
+    --stub: #332a19;
+    --ink: #f2ead6;
+    --ink-soft: #b9ae8f;
+    --ink-faint: #86795c;
+    --line: #3a3320;
+    --teal: #57c9bb;
+    --teal-strong: #7fe0d3;
+    --teal-soft: #1c3733;
+    --gold: #e7b962;
+    --gold-soft: #3a2c15;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 28px -14px rgba(0, 0, 0, 0.6);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Public Sans', -apple-system, 'Malgun Gothic', sans-serif;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 0 20px 100px;
+  }
+
+  a { color: var(--teal-strong); }
+
+  .mono {
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- Header / boarding-pass summary ---------- */
+
+  header.hero {
+    padding: 56px 0 28px;
+  }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin: 0 0 14px;
+  }
+
+  h1.title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(34px, 6vw, 52px);
+    line-height: 1.08;
+    margin: 0 0 10px;
+    text-wrap: balance;
+    color: var(--ink);
+  }
+
+  .subtitle {
+    color: var(--ink-soft);
+    font-size: 16.5px;
+    max-width: 60ch;
+    margin: 0;
+  }
+
+  .pass {
+    margin-top: 34px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    overflow: hidden;
+  }
+
+  @media (max-width: 640px) {
+    .pass { grid-template-columns: 1fr; }
+    .pass-stub { border-left: none !important; border-top: 1px dashed var(--line); }
+  }
+
+  .pass-main {
+    padding: 26px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .pass-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .pass-endpoint .city {
+    font-family: 'Fraunces', serif;
+    font-size: 26px;
+    font-weight: 600;
+  }
+
+  .pass-endpoint .code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-faint);
+    letter-spacing: 0.08em;
+  }
+
+  .pass-plane {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ink-faint);
+    padding: 0 6px;
+  }
+  .pass-plane .line { flex: 1; height: 1px; background: repeating-linear-gradient(90deg, var(--line) 0 6px, transparent 6px 11px); }
+  .pass-plane svg { width: 18px; height: 18px; color: var(--teal); flex-shrink: 0; }
+
+  .pass-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 26px;
+    padding-top: 4px;
+    border-top: 1px solid var(--line);
+    font-size: 13.5px;
+  }
+  .pass-meta div { display: flex; flex-direction: column; gap: 2px; }
+  .pass-meta .k { color: var(--ink-faint); font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; font-family: 'IBM Plex Mono', monospace;}
+  .pass-meta .v { font-weight: 600; }
+
+  .pass-stub {
+    background: var(--stub);
+    border-left: 1px dashed var(--line);
+    padding: 26px 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    justify-content: center;
+  }
+  .pass-stub .k { font-family:'IBM Plex Mono', monospace; font-size: 11px; letter-spacing:.08em; text-transform: uppercase; color: var(--ink-faint); }
+  .pass-stub .v { font-weight: 700; font-size: 15px; }
+  .pass-stub .travelers { display:flex; gap:8px; flex-wrap:wrap; margin-top:2px;}
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--teal-soft);
+    color: var(--teal-strong);
+    border-radius: 999px;
+    padding: 4px 11px;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+
+  /* ---------- Trip-at-a-glance table ---------- */
+
+  .glance {
+    margin-top: 46px;
+  }
+  h2.section-head {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 16px;
+  }
+  .glance-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-md); }
+  table.glance-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    font-size: 14px;
+    min-width: 640px;
+  }
+  table.glance-table th, table.glance-table td {
+    text-align: left;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  table.glance-table th {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    background: var(--surface-2);
+  }
+  table.glance-table tr:last-child td { border-bottom: none; }
+  .city-tag { display:inline-block; padding:2px 9px; border-radius:999px; font-size:12px; font-weight:600; }
+  .city-tag.bkk { background: var(--teal-soft); color: var(--teal-strong); }
+  .city-tag.pty { background: var(--gold-soft); color: var(--gold); }
+
+  /* ---------- Day sections ---------- */
+
+  .day {
+    margin-top: 58px;
+    scroll-margin-top: 20px;
+  }
+
+  .day-head {
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    margin-bottom: 22px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid var(--ink);
+  }
+  .day-num {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 40px;
+    line-height: 1;
+    color: var(--teal-strong);
+  }
+  .day-head-text { display: flex; flex-direction: column; gap: 3px; }
+  .day-date { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: var(--ink-faint); letter-spacing: 0.04em; }
+  .day-title { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; }
+  .day-city { margin-left: auto; align-self: center; }
+
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    border-left: 2px solid var(--line);
+    margin-left: 9px;
+    padding-left: 26px;
+  }
+
+  .event {
+    position: relative;
+    padding: 0 0 26px;
+  }
+  .event:last-child { padding-bottom: 4px; }
+  .event::before {
+    content: "";
+    position: absolute;
+    left: -33px;
+    top: 3px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 2px solid var(--teal);
+  }
+  .event.type-meal::before { border-color: var(--gold); }
+  .event.type-flight::before { border-color: var(--ink-soft); }
+
+  .event-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+  .event-time { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 13.5px; color: var(--teal-strong); }
+  .event.type-meal .event-time { color: var(--gold); }
+  .event-icon { width: 16px; height: 16px; color: var(--ink-faint); flex-shrink:0; }
+  .event-name { font-weight: 700; font-size: 16px; }
+  .event-desc { color: var(--ink-soft); font-size: 14.5px; margin: 4px 0 0; max-width: 66ch; }
+  .event-links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 9px; }
+
+  .link-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--ink);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 5px 12px 5px 9px;
+    transition: border-color .15s ease, color .15s ease;
+  }
+  .link-chip:hover { border-color: var(--teal); color: var(--teal-strong); }
+  .link-chip svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+  /* ---------- Hotel panel ---------- */
+
+  .hotel-card {
+    margin: 30px 0 8px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow);
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .hotel-card.flag { border-color: var(--gold); background: var(--gold-soft); }
+  .hotel-kicker { font-family:'IBM Plex Mono', monospace; font-size: 11px; letter-spacing:.08em; text-transform:uppercase; color: var(--teal); }
+  .hotel-card.flag .hotel-kicker { color: var(--gold); }
+  .hotel-name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 19px; }
+  .hotel-addr { color: var(--ink-soft); font-size: 13.5px; font-family:'IBM Plex Mono', monospace; }
+  .hotel-note { font-size: 13.5px; color: var(--ink-soft); }
+
+  /* ---------- Restaurant grid ---------- */
+
+  .eat-block { margin-top: 8px; }
+  .eat-label { font-family:'IBM Plex Mono', monospace; font-size: 11px; letter-spacing:.08em; text-transform:uppercase; color: var(--ink-faint); margin: 0 0 10px; }
+  .eat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+  .eat-card {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .eat-name { font-weight: 700; font-size: 14.5px; }
+  .eat-tag { font-size: 12px; color: var(--ink-faint); }
+  .eat-desc { font-size: 13px; color: var(--ink-soft); }
+
+  /* ---------- Notes / footer ---------- */
+
+  .callout {
+    margin-top: 54px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: 22px 24px;
+  }
+  .callout h3 { font-family:'Fraunces', serif; font-size: 17px; margin: 0 0 10px; }
+  .callout ul { margin: 0; padding-left: 20px; color: var(--ink-soft); font-size: 14px; display:flex; flex-direction:column; gap:6px;}
+  .callout li strong { color: var(--ink); }
+
+  footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    color: var(--ink-faint);
+    font-size: 12.5px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .link-chip, a { transition: color .15s ease, border-color .15s ease; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="hero">
+    <p class="eyebrow">Family Trip Itinerary — Thailand</p>
+    <h1 class="title">방콕 &amp; 파타야<br>패밀리 트립</h1>
+    <p class="subtitle">두 가족, 어른 4명과 청소년 4명(만 14·14·13·12세)이 함께하는 8박 9일. 방콕 시내에서 시작해 파타야 해변과 풀빌라를 거쳐, 다시 방콕에서 마무리합니다.</p>
+
+    <div class="pass">
+      <div class="pass-main">
+        <div class="pass-row">
+          <div class="pass-endpoint">
+            <div class="city">인천</div>
+            <div class="code mono">ICN</div>
+          </div>
+          <div class="pass-plane">
+            <div class="line"></div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5c.8-.8.8-2.2 0-3s-2.2-.8-3 0L13 8l-8.2-1.8c-.4-.1-.8.1-1 .4l-.3.6c-.2.4-.1.8.2 1.1L9 12l-3 3H3l-1 2 3 1 1 3 2-1v-3l3-3 3.3 5.3c.3.3.7.4 1.1.2l.6-.3c.3-.2.5-.6.4-1Z"/></svg>
+            <div class="line"></div>
+          </div>
+          <div class="pass-endpoint" style="text-align:right">
+            <div class="city">방콕</div>
+            <div class="code mono">BKK</div>
+          </div>
+        </div>
+        <div class="pass-meta">
+          <div><span class="k">가는편</span><span class="v mono">2027.01.26(화) 17:50 출발</span></div>
+          <div><span class="k">오는편</span><span class="v mono">2027.02.03(수) 22:35 수완나품 출발</span></div>
+          <div><span class="k">항공사</span><span class="v">진에어</span></div>
+          <div><span class="k">총 일정</span><span class="v">9일 8박</span></div>
+        </div>
+      </div>
+      <div class="pass-stub">
+        <div>
+          <div class="k">Travelers · 8</div>
+          <div class="travelers">
+            <span class="pill">어른 4</span>
+            <span class="pill">청소년 4 (만 14·14·13·12세)</span>
+          </div>
+        </div>
+        <div>
+          <div class="k">Route</div>
+          <div class="v" style="font-weight:600; font-size:13.5px;">방콕 3박 → 파타야 2박 → 풀빌라 2박 → 방콕 1박</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="glance">
+    <h2 class="section-head">전체 일정 한눈에 보기</h2>
+    <div class="glance-scroll">
+      <table class="glance-table">
+        <thead>
+          <tr><th>Day</th><th>날짜</th><th>지역</th><th>숙소</th><th>핵심 일정</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="mono">Day 1</td><td class="mono">01.26 (화)</td><td><span class="city-tag bkk">방콕</span></td><td>더 블레스 호텔 앤 레지던스</td><td>출국 · 수완나품 도착 · 체크인</td></tr>
+          <tr><td class="mono">Day 2</td><td class="mono">01.27 (수)</td><td><span class="city-tag bkk">방콕</span></td><td>더 블레스 호텔 앤 레지던스</td><td>왕궁 · 왓포 · 왓아룬 · 아시아티크</td></tr>
+          <tr><td class="mono">Day 3</td><td class="mono">01.28 (목)</td><td><span class="city-tag bkk">방콕</span></td><td>더 블레스 호텔 앤 레지던스</td><td>사파리월드 &amp; 마린파크 · 조드페어스 야시장</td></tr>
+          <tr><td class="mono">Day 4</td><td class="mono">01.29 (금)</td><td><span class="city-tag pty">파타야</span></td><td>호텔 제이 파타야</td><td>방콕→파타야 이동 · 나이트바자</td></tr>
+          <tr><td class="mono">Day 5</td><td class="mono">01.30 (토)</td><td><span class="city-tag pty">파타야</span></td><td>호텔 제이 파타야</td><td>코랄아일랜드(꼬란) 보트투어</td></tr>
+          <tr><td class="mono">Day 6</td><td class="mono">01.31 (일)</td><td><span class="city-tag pty">파타야</span></td><td>더 젬스 풀빌라</td><td>풀빌라 이동 · 농눅 트로피컬 가든</td></tr>
+          <tr><td class="mono">Day 7</td><td class="mono">02.01 (월)</td><td><span class="city-tag pty">파타야</span></td><td>더 젬스 풀빌라</td><td>카툰네트워크 아마존 워터파크</td></tr>
+          <tr><td class="mono">Day 8</td><td class="mono">02.02 (화)</td><td><span class="city-tag bkk">방콕</span></td><td>시암 지역 호텔 (확인필요)</td><td>파타야→방콕 이동 · 시암 쇼핑</td></tr>
+          <tr><td class="mono">Day 9</td><td class="mono">02.03 (수)</td><td><span class="city-tag bkk">방콕</span></td><td>레이트 체크아웃 18:00</td><td>자유일정 · 공항 이동 · 22:35 출국</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ DAY 1 ============ -->
+  <section class="day" id="day1">
+    <div class="day-head">
+      <div class="day-num mono">01</div>
+      <div class="day-head-text">
+        <div class="day-date">2027.01.26 (화)</div>
+        <div class="day-title">출국 &amp; 방콕 입성</div>
+      </div>
+      <span class="city-tag bkk day-city">방콕</span>
+    </div>
+
+    <div class="timeline">
+      <div class="event type-flight">
+        <div class="event-top">
+          <span class="event-time">15:20</span>
+          <span class="event-name">인천공항 집결 · 진에어 수속</span>
+        </div>
+        <p class="event-desc">출발 2시간 30분 전 집결 권장. 8인 단체 수속이라 여유 있게 도착하는 것이 좋습니다.</p>
+      </div>
+      <div class="event type-flight">
+        <div class="event-top">
+          <span class="event-time">17:50</span>
+          <span class="event-name">인천(ICN) → 수완나품(BKK) 출발</span>
+        </div>
+        <p class="event-desc">진에어. 비행시간 약 5시간 50분, 태국은 한국보다 2시간 느립니다.</p>
+      </div>
+      <div class="event type-flight">
+        <div class="event-top">
+          <span class="event-time">21:40 <span style="font-weight:400;color:var(--ink-faint)">현지시각(예상)</span></span>
+          <span class="event-name">수완나품 공항 도착</span>
+        </div>
+        <p class="event-desc">실제 도착시각은 항공권의 현지 도착시간을 다시 확인해 주세요. 입국심사·수하물 후 8인 이동은 대형 밴(미니밴) 픽업을 미리 예약해두면 편합니다.</p>
+        <div class="event-links">
+          <a class="link-chip" href="https://www.google.com/maps/search/?api=1&query=Suvarnabhumi+Airport" target="_blank" rel="noopener">📍 수완나품 공항 위치</a>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-top">
+          <span class="event-time">22:30</span>
+          <span class="event-name">더 블레스 호텔 앤 레지던스 체크인</span>
+        </div>
+        <p class="event-desc">공항에서 약 40~50분 소요. 늦은 도착이므로 첫날은 숙소 근처에서 가볍게 마무리합니다.</p>
+      </div>
+      <div class="event type-meal">
+        <div class="event-top">
+          <span class="event-time">23:00</span>
+          <span class="event-name">숙소 인근 야식</span>
+        </div>
+        <p class="event-desc">수쿰빗 33 골목은 밤늦게까지 여는 로컬 식당과 편의점이 많아 첫날 가볍게 먹기 좋습니다.</p>
+      </div>
+    </div>
+
+    <div class="hotel-card">
+      <div class="hotel-kicker">Stay · 1 / 3박</div>
+      <div class="hotel-name">더 블레스 호텔 앤 레지던스 (The Bless Hotel &amp; Residence)</div>
+      <div class="hotel-addr">10 Sukhumvit 33 Alley, Khlong Tan Nuea, Watthana, Bangkok</div>
+      <div class="hotel-note">프롬퐁(Phrom Phong) BTS역 도보 5분, 엠포리엄 백화점 인근. 루프탑 수영장 보유.</div>
+      <div class="event-links">
+        <a class="link-chip" href="https://www.google.com/maps/search/?api=1&query=The+Bless+Hotel+%26+Residence+Bangkok" target="_blank" rel="noopener">📍 지도에서 보기</a>
+        <a class="link-chip" href="https://www.blessresidence.com/" target="_blank" rel="noopener">🔗 공식 홈페이지</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DAY 2 ============ -->
+  <section class="day" id="day2">
+    <div class="day-head">
+      <div class="day-num mono">02</div>
+      <div class="day-head-text">
+        <div class="day-date">2027.01.27 (수)</div>
+        <div class="day-title">왕궁 &amp; 올드타운, 강변 야시장</div>
+      </div>
+      <span class="city-tag bkk day-city">방콕</span>
+    </div>
+
+    <div class="timeline">
+      <div class="event type-meal">
+        <div class="event-top"><span class="event-time">08:00</span><span class="event-name">호텔 조식</span></div>
+      </div>
+      <div class="event">
+        <div class="event-top"><span class="event-time">09:00</span><span class="event-name">왕궁 &amp; 왓프라깨우 (에메랄드 사원)</span></div>
+        <p class="event-desc">태국 왕실 사원. 어깨·무릎을 가리는 복장 필수(반바지·민소매 금지). 오전 일찍 가야 덜 덥고 덜 붐빕니다.</p>
+        <div class="event-links"><a class="link-chip" href="https://www.google.com/maps/search/?api=1&query=Grand+Palace+Bangkok" target="_blank" rel="noopener">📍 지도</a></div>
+      </div>
+      <div class="event">
+        <div class="event-top"><span class="event-time">11:00</span><span class="event-name">왓포 (와불사원)</span></div>
+        <p class="event-desc">왕궁 도보 5분. 길이 46m의 거대한 와불상. 태국 전통 마사지 발상지로 유명합니다.</p>
+        <div class="event-links"><a class="link-chip" href="https://www.google.com/maps/search/?api=1&query=Wat+Pho+Bangkok" target="_blank" rel="noopener">📍 지도</a></div>
+      </div>
+      <div class="event type-meal">
+        <div class="event-top"><span class="event-time">12:30</span><span class="event-name">타티엔 선착장 근처 점심</span></div>
+        <p class="event-desc">더 딥 사우스(The Deep South), 쏨땀 데르 등 로컬 태국식 식당가.</p>
+      </div>
+      <div class="event">
+        <div class="event-top"><span class="event-time">14:00</span><span class="event-name">쫓아프라야 강 보트 &amp; 왓아룬 (새벽사원)</span></div>
+        <p class="event-desc">타티엔 선착장에서 크로스보트로 강 건너 왓아룬. 도자기 파편으로 장식된 프랑(탑)이 인상적입니다.</p>
+        <div class="event-links"><a class="link-chip" href="https://www.google.com/maps/search/?api=1&query=Wat+Arun+Bangkok" target="_blank" rel="noopener">📍 지도</a></div>
+      </div>
+      <div class="event">
+        <div class="event-top"><span class="event-time">17:00</span><span class="event-name">호텔 복귀 &amp; 휴식</span></div>
+      </div>
+      <div class="event type-meal">
+        <div class="event-top"><span class="event-time">19:00</span><span class="event-name">아시아티크 더 리버프론트</span></div>
+        <p class="event-desc">강변 야시장 겸 쇼핑몰. 대관람차(칼립소 관람차)와 다양한 레스토랑, 공연이 있어 온 가족이 즐기기 좋습니다. 사톤 선착장에서 무료 셔틀보트 운행.</p>
+        <div class="event-links"><a class="link-chip" href="https://www.google.com/maps/search/?api=1&query=Asiatique+The+Riverfront+Bangkok" target="_blank" rel="noopener">📍 지도</a></div>
+      </div>
+    </div>
+
+    <div class="eat-block">
+      <p class="eat-label">오늘의 맛집 후보</p>
+      <div class="eat-grid">
+        <div class="eat-card">
+          <div class="eat-name">더 딥 사우스</div>
+          <div class="eat-tag">태국 남부식 · 타티엔</div>
+          <div class="eat-desc">왕궁 관광 후 접근성 좋은 로컬 맛집.</div>
+          <a class="link-chip" href="https://www.google.com/maps/search/?api=1&query=The+Deep+South+Restaurant+Bangkok" target="_blank" rel="noopener">📍</a>
+        </div>
+        <div class="eat-card">
+          <div class="eat-name">The Deck by Arun Residence</div>
+          <div class="eat-tag">타이 퓨전 · 왓아룬 뷰</div>
+          <div class="eat-desc">강 건너 왓아룬을 정면으로 보며 식사할 수 있는 뷰 맛집.</div>
+          <a class="link-chip" href="https://www.google.com/maps/search/?api=1&query=The+Deck+by+Arun+Residence+Bangkok" target="_blank" rel="noopener">📍</a>
+        </div>
+        <div class="eat-card">
+          <div class="eat-name">아시아티크 내 레스토랑가</div>
+          <div class="eat-tag">해산물 · 태국식 · 다양</div>
+          <div class="eat-desc">사보이 씨푸드 등 강변 좌석 레스토랑 다수.</div>
+          <a class="link-chip" href="https://www.google.com/maps/search/?api=1&query=Savoey+Seafood+Asiatique" target="_blank" rel="noopener">📍</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DAY 3 ============ -->
+  <section class="day" id="day3">
+    <div class="day-head">
+      <div class="day-num mono">03</div>
+      <div class="day-head-text">
+        <div class="day-date">2027.01.28 (목)</div>
+        <div class="day-title">사파리월드 &amp; 로컬 야시장</div>
+      </div>
+      <span class="city-tag bkk day-city">방콕</span>
+    </div>
+
+    <div class="timeline">
+      <div class="event type-meal">
+        <div class="event-top"><span class="event-time">07:30</span><span class="event-name">호텔 조식 후 출발</span></div>
+      </div>
+      <div class="event">
+        <div class="event-top"><span class="event-time">09:00</span><span class="event-name">사파리월드 &amp; 마린파크</span></div>
+        <p class="event-desc">차를 타고 통과하는 사파리파크와 돌고래·바다사자 쇼가 있는 마린파크가 함께 있어 청소년 4명 모두 즐기기 좋은 하루 코스입니다. 숙소에서 약 45분 거리.</p>
+        <div class="event-links"><a class="link-chip" href="https://www.google.com/maps/search/?api=1&query=Safari+World+Bangkok" target="_blank" rel="noopener">📍 지도</a></div>
+      </div>
+      <div class="event type-meal">
+        <div class="event-top"><span class="event-time">13:00</span><span class="event-name">파크 내 식사</span></div>
+      </div>
+      <div class="event">
+        <div class="event-top"><span class="event-time">16:00</span><span class="event-name">호텔 복귀, 수영 &amp; 휴식</span></div>
+      </div>
+      <div class="event type-meal">
+        <div class="event-top"><span class="event-time">18:30</span><span class="event-name">조드페어스 야시장 (라마 9)</span></div>
+        <p class="event-desc">현지 20~30대에게 인기인 트렌디 야시장으로 목~일요일 운영. 다양한 스트리트푸드 노점과 소품샵, 라이브 공연이 있어 저녁 시간 보내기 좋습니다.</p>
+        <div class="event-links"><a class="link-chip" href="https://www.google.com/maps/search/?api=1&query=Jodd+Fairs+Rama+9+Bangkok" target="_blank" rel="noopener">📍 지도</a></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DAY 4 ============ -->
+  <section class="day" id="day4">
+    <div class="day-head">
+      <div class="day-num mono">04</div>
+      <div class="day-head-text">
+        <div class="day-date">2027.01.29 (금)</div>
+        <div class="day-title">방콕 → 파타야 이동</div>
+      </div>
+      <span class="city-tag pty day-city">파타야</span>
+    </div>
+
+    <div class="timeline">
+      <div class="event">
+        <div class="event-top"><span class="event-time">10:00</span><span class="event-name">더 블레스 호텔 체크아웃</span></div>
+      </div>
+      <div class="event">
+        <div class="event-top"><span class="event-time">10:30</span><span class="event-name">방콕 → 파타야 이동 (밴 대절, 약 2시간)</span></div>
+        <p class="event-desc">8인 짐이 많으므로 9~10인승 밴 대절을 추천합니다.</p>
+      </div>
+      <div class="event type-meal">
+        <div class="event-top"><span class="event-time">13:00</span><span class="event-name">호텔 제이 체크인 &amp; 점심</span></div>
+      </div>
+      <div class="event">
+        <div class="event-top"><span class="event-time">15:00</span><span class="event-name">파타야 비치 &amp; 센트럴 페스티벌 파타야 비치</span></div>
+        <p class="event-desc">해변 산책 후 에어컨 쇼핑몰에서 더위를 피해 쉬기 좋습니다. 호텔에서 도보 이동 가능.</p>
+        <div class="event-links"><a class="link-chip" href="https://www.google.com/maps/search/?api=1&query=Central+Festival+Pattaya+Beach" target="_blank" rel="noopener">📍 지도</a></div>
+      </div>
+      <div class="event type-meal">
+        <div class="event-top"><span class="event-time">18:30</span><span class="event-name">파타야 나이트 바자 &amp; 저녁</span></div>
+        <p class="event-desc">해변가 야시장. 다양한 길거리 음식과 기념품 쇼핑. 가족 단위로도 무난하게 즐길 수 있는 초저녁 시간대를 추천합니다.</p>
+        <div class="event-links"><a class="link-chip" href="https://www.google.com/maps/search/?api=1&query=Pattaya+Night+Bazaar" target="_blank" rel="noopener">📍 지도</a></div>
+      </div>
+    </div>
+
+    <div class="hotel-card">
+      <div class="hotel-kicker">Stay · 2 / 2박</div>
+      <div class="hotel-name">호텔 제이 파타야 (Hotel J Pattaya)</div>
+      <div class="hotel-addr">221 Moo 6, Soi 5, North Pattaya Rd, Nong Prue, Bang Lamung, Chonburi</div>
+      <div class="hotel-note">터미널 21 파타야까지 도보 9분, 노스 파타야 중심가.</div>
+      <div class="event-links">
+        <a class="link-chip" href="https://www.google.com/maps/search/?api=1&query=Hotel+J+Pattaya" target="_blank" rel="noopener">📍 지도에서 보기</a>
+        <a class="link-chip" href="https://www.hoteljpattaya.com/" target="_blank" rel="noopener">🔗 공식 홈페이지</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DAY 5 ============ -->
+  <section class="day" id="day5">
+    <div class="day-head">
+      <div class="day-num mono">05</div>
+      <div class="day-head-text">
+        <div class="day-date">2027.01.30 (토)</div>
+        <div class="day-title">코랄아일랜드(꼬란) 보트 투어</div>
+      </div>
+      <span class="city-tag pty day-city">파타야</span>
+    </div>
+
+    <div class="timeline">
+      <div class="event type-meal">
+        <div class="event-top"><span class="event-time">07:30</span><span class="event-name">조식 후 출발</span></div>
+      </div>
+      <div class="event">
+        <div class="event-top"><span class="event-time">08:30</span><span class="event-name">발라하이 선착장 → 코랄아일랜드(꼬란) 스피드보트</span></div>
+        <p class="event-desc">약 20분 소요. 투명 바닥 보트, 바나나보트·패러세일링 등 해양 액티비티가 청소년들에게 인기입니다. 타왠 비치 추천.</p>
+        <div class="event-links"><a class="link-chip" href="https://www.google.com/maps/search/?api=1&query=Koh+Larn+Coral+Island+Pattaya" target="_blank" rel="noopener">📍 지도</a></div>
+      </div>
+      <div class="event type-meal">
+        <div class="event-top"><span class="event-time">12:00</span><span class="event-name">섬에서 해산물 점심</span></div>
+      </div>
+      <div class="event">
+        <div class="event-top"><span class="event-time">15:30</span><span class="event-name">파타야 복귀 &amp; 호텔 휴식</span></div>
+      </div>
+      <div class="event type-meal">
+        <div class="event-top"><span class="event-time">19:00</span><span class="event-name">해변가 저녁 (씨푸드)</span></div>
+        <p class="event-desc">시사이드 좌석에서 즐기는 해산물 그릴 전문점.</p>
+        <div class="event-links"><a class="link-chip" href="https://www.google.com/maps/search/?api=1&query=Sea+Sand+Sun+Restaurant+Pattaya" target="_blank" rel="noopener">📍 지도</a></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DAY 6 ============ -->
+  <section class="day" id="day6">
+    <div class="day-head">
+      <div class="day-num mono">06</div>
+      <div class="day-head-text">
+        <div class="day-date">2027.01.31 (일)</div>
+        <div class="day-title">풀빌라 이동 &amp; 농눅 트로피컬 가든</div>
+      </div>
+      <span class="city-tag pty day-city">파타야</span>
+    </div>
+
+    <div class="timeline">
+      <div class="event">
+        <div class="event-top"><span class="event-time">10:00</span><span class="event-name">호텔 제이 체크아웃</span></div>
+      </div>
+      <div class="event">
+        <div class="event-top"><span class="event-time">10:30</span><span class="event-name">더 젬스 풀빌라 체크인 (농프루)</span></div>
+        <p class="event-desc">각 객실에 프라이빗 풀이 있어 8명이 눈치 보지 않고 물놀이하기 좋습니다. 짐을 풀고 오전은 풀에서 자유시간을 추천합니다.</p>
+      </div>
+      <div class="event type-meal">
+        <div class="event-top"><span class="event-time">12:30</span><span class="event-name">풀빌라에서 점심 (배달/룸서비스)</span></div>
+      </div>
+      <div class="event">
+        <div class="event-top"><span class="event-time">15:00</span><span class="event-name">농눅 트로피컬 가든</span></div>
+        <p class="event-desc">거대한 열대 정원과 전통 무용·코끼리 공연으로 유명한 테마파크. 풀빌라에서 차로 약 15분.</p>
+        <div class="event-links"><a class="link-chip" href="https://www.google.com/maps/search/?api=1&query=Nong+Nooch+Tropical+Garden+Pattaya" target="_blank" rel="noopener">📍 지도</a></div>
+      </div>
+      <div class="event type-meal">
+        <div class="event-top"><span class="event-time">19:00</span><span class="event-name">풀빌라 바비큐 또는 근처 로컬 식당</span></div>
+        <p class="event-desc">숙소에 요청 시 프라이빗 바비큐 세팅이 가능한 경우가 많아 미리 문의를 추천합니다.</p>
+      </div>
+    </div>
+
+    <div class="hotel-card">
+      <div class="hotel-kicker">Stay · 3 / 2박</div>
+      <div class="hotel-name">더 젬스 풀빌라 (The Gems Mining Pool Villas Pattaya)</div>
+      <div class="hotel-addr">888 Moo 1, Nong Prue, Banglamung, Chonburi</div>
+      <div class="hotel-note">방콕-파타야 고속도로 접근이 쉬운 위치로, 시내 중심에서는 차로 약 10~15분.</div>
+      <div class="event-links">
+        <a class="link-chip" href="https://www.google.com/maps/search/?api=1&query=The+Gems+Mining+Pool+Villas+Pattaya" target="_blank" rel="noopener">📍 지도에서 보기</a>
+        <a class="link-chip" href="https://thegemspattaya.com/" target="_blank" rel="noopener">🔗 공식 홈페이지</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DAY 7 ============ -->
+  <section class="day" id="day7">
+    <div class="day-head">
+      <div class="day-num mono">07</div>
+      <div class="day-head-text">
+        <div class="day-date">2027.02.01 (월)</div>
+        <div class="day-title">워터파크 &amp; 풀빌라 휴식</div>
+      </div>
+      <span class="city-tag pty day-city">파타야</span>
+    </div>
+
+    <div class="timeline">
+      <div class="event type-meal">
+        <div class="event-top"><span class="event-time">08:00</span><span class="event-name">조식 후 출발</span></div>
+      </div>
+      <div class="event">
+        <div class="event-top"><span class="event-time">09:30</span><span class="event-name">카툰 네트워크 아마존 워터파크</span></div>
+        <p class="event-desc">동남아 최대급 워터파크 중 하나로 슬라이드가 다양해 청소년 4명이 하루 종일 놀기 좋습니다. 풀빌라에서 차로 약 20분.</p>
+        <div class="event-links"><a class="link-chip" href="https://www.google.com/maps/search/?api=1&query=Cartoon+Network+Amazone+Pattaya" target="_blank" rel="noopener">📍 지도</a></div>
+      </div>
+      <div class="event type-meal">
+        <div class="event-top"><span class="event-time">13:00</span><span class="event-name">워터파크 내 식사</span></div>
+      </div>
+      <div class="event">
+        <div class="event-top"><span class="event-time">16:00</span><span class="event-name">풀빌라 복귀 &amp; 자유시간</span></div>
+        <p class="event-desc">마지막 파타야 밤이므로 짐 정리와 휴식 위주로 여유 있게 마무리합니다.</p>
+      </div>
+      <div class="event type-meal">
+        <div class="event-top"><span class="event-time">19:00</span><span class="event-name">풀빌라 저녁 (바비큐/배달)</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DAY 8 ============ -->
+  <section class="day" id="day8">
+    <div class="day-head">
+      <div class="day-num mono">08</div>
+      <div class="day-head-text">
+        <div class="day-date">2027.02.02 (화)</div>
+        <div class="day-title">파타야 → 방콕 이동, 시암 쇼핑</div>
+      </div>
+      <span class="city-tag bkk day-city">방콕</span>
+    </div>
+
+    <div class="timeline">
+      <div class="event">
+        <div class="event-top"><span class="event-time">10:00</span><span class="event-name">더 젬스 풀빌라 체크아웃</span></div>
+      </div>
+      <div class="event">
+        <div class="event-top"><span class="event-time">10:30</span><span class="event-name">파타야 → 방콕 이동 (밴 대절, 약 2시간)</span></div>
+      </div>
+      <div class="event type-meal">
+        <div class="event-top"><span class="event-time">13:00</span><span class="event-name">시암 지역 호텔 체크인 &amp; 점심</span></div>
+        <p class="event-desc">숙소명이 정확히 확인되지 않아 임시로 표기했습니다. 정확한 상호를 알려주시면 지도·주소를 맞춰 수정하겠습니다.</p>
+      </div>
+      <div class="event">
+        <div class="event-top"><span class="event-time">15:00</span><span class="event-name">시암 파라곤 &amp; 시암 스퀘어</span></div>
+        <p class="event-desc">대형 쇼핑몰과 아쿠아리움(씨라이프 방콕 오션월드), 젊은 감성의 시암 스퀘어 골목까지 도보권. 방콕 마지막 쇼핑을 즐기기 좋습니다.</p>
+        <div class="event-links"><a class="link-chip" href="https://www.google.com/maps/search/?api=1&query=Siam+Paragon+Bangkok" target="_blank" rel="noopener">📍 지도</a></div>
+      </div>
+      <div class="event type-meal">
+        <div class="event-top"><span class="event-time">19:00</span><span class="event-name">시암 인근 저녁</span></div>
+        <p class="event-desc">코카 수끼(Coca Suki) 시암스퀘어점 등 태국식 샤브샤브로 온 가족이 무난하게 즐기기 좋습니다.</p>
+        <div class="event-links"><a class="link-chip" href="https://www.google.com/maps/search/?api=1&query=Coca+Suki+Siam+Square" target="_blank" rel="noopener">📍 지도</a></div>
+      </div>
+    </div>
+
+    <div class="hotel-card flag">
+      <div class="hotel-kicker">Stay · 4 / 1박 · 확인 필요</div>
+      <div class="hotel-name">시암 지역 호텔 ("루드 시암")</div>
+      <div class="hotel-note">말씀하신 "루드 시암"이라는 상호를 정확히 찾지 못했습니다. 정확한 호텔명(영문 표기 또는 예약 확인서 상 이름)을 알려주시면 주소·지도 링크·홈페이지를 채워서 다시 정리해 드리겠습니다.</div>
+    </div>
+  </section>
+
+  <!-- ============ DAY 9 ============ -->
+  <section class="day" id="day9">
+    <div class="day-head">
+      <div class="day-num mono">09</div>
+      <div class="day-head-text">
+        <div class="day-date">2027.02.03 (수)</div>
+        <div class="day-title">자유 일정 &amp; 귀국</div>
+      </div>
+      <span class="city-tag bkk day-city">방콕</span>
+    </div>
+
+    <div class="timeline">
+      <div class="event type-meal">
+        <div class="event-top"><span class="event-time">08:00</span><span class="event-name">호텔 조식</span></div>
+      </div>
+      <div class="event">
+        <div class="event-top"><span class="event-time">09:30</span><span class="event-name">자유 일정 — 마사지 &amp; 마지막 쇼핑</span></div>
+        <p class="event-desc">레이트 체크아웃(18:00)이 있어 시간이 넉넉합니다. 태국 전통 마사지샵에서 쉬거나, 못 다한 기념품 쇼핑을 마무리하기 좋습니다.</p>
+      </div>
+      <div class="event type-meal">
+        <div class="event-top"><span class="event-time">12:30</span><span class="event-name">점심</span></div>
+      </div>
+      <div class="event">
+        <div class="event-top"><span class="event-time">18:00</span><span class="event-name">호텔 레이트 체크아웃</span></div>
+      </div>
+      <div class="event">
+        <div class="event-top"><span class="event-time">18:15</span><span class="event-name">수완나품 공항 이동 (약 45~60분)</span></div>
+        <p class="event-desc">퇴근 시간대 교통 체증을 감안해 여유 있게 출발하는 것을 추천합니다.</p>
+      </div>
+      <div class="event type-flight">
+        <div class="event-top"><span class="event-time">20:00</span><span class="event-name">진에어 탑승 수속</span></div>
+      </div>
+      <div class="event type-flight">
+        <div class="event-top"><span class="event-time">22:35</span><span class="event-name">수완나품(BKK) → 인천(ICN) 출발</span></div>
+        <p class="event-desc">한국 도착은 다음날(2/4) 새벽 시간대가 예상됩니다. 정확한 도착 시각은 항공권을 확인해 주세요.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="callout">
+    <h3>여행 전 확인해 주세요</h3>
+    <ul>
+      <li><strong>"루드 시암" 호텔명</strong> — 정확한 영문 상호를 알려주시면 주소·지도·홈페이지 링크를 채워드립니다.</li>
+      <li><strong>도착·귀국 항공 시간</strong> — 인천 도착 현지시각은 통상적인 비행시간 기준 추정치이며, 항공권상 실제 시각으로 다시 맞춰주세요.</li>
+      <li><strong>도시 간 이동</strong> — 방콕↔파타야 구간(약 2시간)은 8인 + 캐리어 기준 9~10인승 밴 대절을 추천합니다.</li>
+      <li><strong>왕궁·왓포 복장</strong> — 어깨와 무릎을 가리는 복장 필수(현장 대여 가능하나 대기가 있을 수 있음).</li>
+      <li><strong>사파리월드, 코랄아일랜드, 워터파크</strong> — 성수기(1월 말)에는 온라인 사전 예매 시 대기시간을 줄일 수 있습니다.</li>
+    </ul>
+  </div>
+
+  <footer>
+    작성 기준일 2026.08.28 · 실제 예약 정보(항공 시각, 호텔명)는 예약 확인서를 기준으로 다시 한번 확인해 주세요.
+  </footer>
+
+</div>
+</body>
+</html>
