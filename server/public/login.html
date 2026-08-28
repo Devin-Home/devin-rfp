@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>방콕·파타야 트립 — 로그인</title>
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div class="auth-wrap">
+    <form class="auth-card" id="loginForm">
+      <h1>방콕 · 파타야 트립</h1>
+      <p>일행끼리 공유한 비밀번호를 입력하세요.</p>
+      <div class="form-row">
+        <label class="form-label" for="password">비밀번호</label>
+        <input class="form-input" type="password" id="password" name="password" required autofocus>
+      </div>
+      <div class="auth-error" id="authError"></div>
+      <button class="btn btn-primary" type="submit" style="width:100%; margin-top: 6px;">입장하기</button>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById('loginForm');
+    const errEl = document.getElementById('authError');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errEl.textContent = '';
+      const password = document.getElementById('password').value;
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          errEl.textContent = data.error || '로그인에 실패했습니다.';
+          return;
+        }
+        window.location.href = '/';
+      } catch (err) {
+        errEl.textContent = '서버에 연결할 수 없습니다.';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+  "name": "bkk-pty-trip-was",
+  "version": "1.0.0",
+  "description": "Bangkok/Pattaya trip itinerary, expense ledger, and photo gallery web app",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "hash-password": "node scripts/hash-password.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^13.0.3",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "multer": "^2.2.0"
+  }
+}
