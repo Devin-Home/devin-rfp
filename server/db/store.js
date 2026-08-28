@@ -168,6 +168,7 @@ function createExpense(fields) {
     date: fields.date || new Date().toISOString().slice(0, 10),
     day_id: fields.day_id || null,
     category: fields.category || '기타',
+    payment_method: fields.payment_method || '카드',
     description: fields.description || '',
     amount_thb: Number(fields.amount_thb) || 0,
     payer: fields.payer || '',
@@ -183,7 +184,7 @@ function createExpense(fields) {
 function updateExpense(id, fields) {
   const expense = state.expenses.find((e) => e.id === Number(id));
   if (!expense) return null;
-  const editable = ['date', 'day_id', 'category', 'description', 'payer', 'memo', 'receipt_image'];
+  const editable = ['date', 'day_id', 'category', 'payment_method', 'description', 'payer', 'memo', 'receipt_image'];
   editable.forEach((k) => {
     if (fields[k] !== undefined) expense[k] = fields[k];
   });

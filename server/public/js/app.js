@@ -239,11 +239,35 @@ document.getElementById('addDayBtn').addEventListener('click', async () => {
 
 /* ---------------- Expenses ---------------- */
 
+let paymentFilter = 'all'; // 'all' | '카드' | '현금'
+
 function exchangeRate() {
   return Number(localStorage.getItem('krwPerThb') || 39);
 }
 function krw(thb) {
   return Math.round(thb * exchangeRate()).toLocaleString('ko-KR');
+}
+
+const fxInput = document.getElementById('fxRate');
+fxInput.value = exchangeRate();
+fxInput.addEventListener('change', () => {
+  const v = Number(fxInput.value) || 39;
+  localStorage.setItem('krwPerThb', v);
+  renderSummary();
+  renderExpenses();
+});
+
+document.getElementById('paymentFilter').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-filter]');
+  if (!btn) return;
+  paymentFilter = btn.dataset.filter;
+  document.querySelectorAll('#paymentFilter .seg').forEach((b) => b.classList.toggle('active', b === btn));
+  renderSummary();
+  renderExpenses();
+});
+
+function filteredExpenses() {
+  return paymentFilter === 'all' ? expenses : expenses.filter((e) => (e.payment_method || '카드') === paymentFilter);
 }
 
 async function loadExpenses() {
@@ -253,32 +277,39 @@ async function loadExpenses() {
 }
 
 function renderSummary() {
-  const total = expenses.reduce((s, e) => s + e.amount_thb, 0);
+  const list = filteredExpenses();
+  const total = list.reduce((s, e) => s + e.amount_thb, 0);
   const byPayer = {};
-  expenses.forEach((e) => { if (e.payer) byPayer[e.payer] = (byPayer[e.payer] || 0) + e.amount_thb; });
+  list.forEach((e) => { if (e.payer) byPayer[e.payer] = (byPayer[e.payer] || 0) + e.amount_thb; });
   const strip = document.getElementById('summaryStrip');
+  const moneyCard = (thb, label) => `
+    <div class="summary-card">
+      <div class="num mono">${krw(thb)}원</div>
+      <div class="lbl">${label} · ฿${thb.toLocaleString('ko-KR')}</div>
+    </div>`;
   const cards = [
-    `<div class="summary-card"><div class="num mono">฿${total.toLocaleString('ko-KR')}</div><div class="lbl">총 지출</div></div>`,
-    `<div class="summary-card"><div class="num mono">≈ ${krw(total)}원</div><div class="lbl">환율 ${exchangeRate()}원/밧</div></div>`,
-    ...Object.entries(byPayer).map(([p, v]) => `<div class="summary-card"><div class="num mono">฿${v.toLocaleString('ko-KR')}</div><div class="lbl">${esc(p)} 결제</div></div>`),
+    moneyCard(total, paymentFilter === 'all' ? '전체 지출' : `${paymentFilter} 지출`),
+    ...Object.entries(byPayer).map(([p, v]) => moneyCard(v, `${esc(p)} 결제`)),
   ];
   strip.innerHTML = cards.join('');
 }
 
 function renderExpenses() {
   const tbody = document.getElementById('expenseRows');
-  if (!expenses.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-hint">아직 등록된 지출이 없습니다.</td></tr>';
+  const list = filteredExpenses();
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-hint">해당하는 지출 내역이 없습니다.</td></tr>';
     return;
   }
-  tbody.innerHTML = expenses.map((e) => `
+  tbody.innerHTML = list.map((e) => `
     <tr>
       <td class="mono">${esc(e.date)}</td>
       <td><span class="cat-pill">${esc(e.category)}</span></td>
+      <td><span class="pm-pill">${esc(e.payment_method || '카드')}</span></td>
       <td>${esc(e.description)}</td>
       <td>${esc(e.payer)}</td>
       <td>${esc(e.memo || '')}</td>
-      <td class="amount">฿${Number(e.amount_thb).toLocaleString('ko-KR')}</td>
+      <td class="amount"><span class="amount-krw">${krw(e.amount_thb)}원</span><span class="amount-thb">฿${Number(e.amount_thb).toLocaleString('ko-KR')}</span></td>
       <td><button class="icon-btn danger" data-id="${e.id}" data-act="del-expense">🗑</button></td>
     </tr>`).join('');
 }
@@ -315,14 +346,57 @@ async function loadImages() {
   renderGallery();
 }
 
-function renderGallery() {
-  const grid = document.getElementById('galleryGrid');
-  grid.innerHTML = images.length ? images.map((img) => `
+function galleryItemHTML(img) {
+  return `
     <div class="gallery-item">
       <img src="/uploads/${esc(img.filename)}" alt="${esc(img.caption || '')}" data-act="view-image" data-src="/uploads/${esc(img.filename)}">
       <button class="icon-btn danger del" data-act="del-image" data-id="${img.id}">🗑</button>
       ${img.caption ? `<div class="cap">${esc(img.caption)}</div>` : ''}
-    </div>`).join('') : '<p class="empty-hint">아직 업로드된 사진이 없습니다.</p>';
+    </div>`;
+}
+
+function renderGallery() {
+  const grid = document.getElementById('galleryGrid');
+  if (!images.length) {
+    grid.innerHTML = '<p class="empty-hint">아직 업로드된 사진이 없습니다.</p>';
+    return;
+  }
+
+  const byDay = new Map(); // day_id (or 'none') -> images[]
+  images.forEach((img) => {
+    const key = img.day_id || 'none';
+    if (!byDay.has(key)) byDay.set(key, []);
+    byDay.get(key).push(img);
+  });
+  byDay.forEach((list) => list.sort((a, b) => a.uploaded_at.localeCompare(b.uploaded_at)));
+
+  const sortedDays = days.slice().sort((a, b) => a.sort_order - b.sort_order);
+  const sections = [];
+
+  sortedDays.forEach((day) => {
+    const list = byDay.get(day.id);
+    if (!list || !list.length) return;
+    sections.push(`
+      <div class="day-group-head">
+        <span class="n mono">Day ${day.day_number}</span>
+        <span class="t">${esc(day.title)}</span>
+        <span class="c">${list.length}장</span>
+      </div>
+      <div class="gallery-grid">${list.map(galleryItemHTML).join('')}</div>`);
+  });
+
+  const unassigned = byDay.get('none');
+  if (unassigned && unassigned.length) {
+    sections.push(`
+      <div class="day-group-head">
+        <span class="n mono">—</span>
+        <span class="t">날짜 미지정</span>
+        <span class="c">${unassigned.length}장</span>
+      </div>
+      <div class="gallery-grid">${unassigned.map(galleryItemHTML).join('')}</div>`);
+  }
+
+  grid.innerHTML = sections.join('');
 }
 
 document.getElementById('imageForm').addEventListener('submit', async (e) => {
@@ -362,5 +436,6 @@ lightbox.addEventListener('click', () => lightbox.classList.remove('open'));
   } catch (e) { return; }
 
   document.getElementById('expenseForm').date.value = new Date().toISOString().slice(0, 10);
-  await Promise.all([loadDays(), loadExpenses(), loadImages()]);
+  await loadDays(); // gallery grouping needs `days` populated first
+  await Promise.all([loadExpenses(), loadImages()]);
 })();
