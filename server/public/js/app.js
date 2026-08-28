@@ -242,7 +242,7 @@ document.getElementById('addDayBtn').addEventListener('click', async () => {
 let paymentFilter = 'all'; // 'all' | '카드' | '현금'
 
 function exchangeRate() {
-  return Number(localStorage.getItem('krwPerThb') || 39);
+  return Number(localStorage.getItem('krwPerThb') || 41);
 }
 function krw(thb) {
   return Math.round(thb * exchangeRate()).toLocaleString('ko-KR');
@@ -251,7 +251,7 @@ function krw(thb) {
 const fxInput = document.getElementById('fxRate');
 fxInput.value = exchangeRate();
 fxInput.addEventListener('change', () => {
-  const v = Number(fxInput.value) || 39;
+  const v = Number(fxInput.value) || 41;
   localStorage.setItem('krwPerThb', v);
   renderSummary();
   renderExpenses();
