@@ -277,11 +277,6 @@ select.form-input { appearance: none; background-image: none; }
 
 /* ---------- Itinerary layout ---------- */
 .itin-layout { margin-top: 40px; display: grid; grid-template-columns: 242px minmax(0, 1fr); gap: clamp(20px, 3vw, 44px); align-items: start; }
-@media (max-width: 1000px) {
-  .itin-layout { grid-template-columns: minmax(0, 1fr); }
-  .day-rail { position: static; flex-direction: row; overflow-x: auto; padding-bottom: 6px; }
-  .day-rail-btn { min-width: 150px; }
-}
 .day-rail { position: sticky; top: 74px; display: flex; flex-direction: column; gap: 6px; }
 .day-rail-btn {
   display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 0; border-radius: 999px;
@@ -303,6 +298,11 @@ select.form-input { appearance: none; background-image: none; }
   cursor: pointer; margin-top: 6px;
 }
 .day-rail-add:hover { background: var(--bl-100); }
+@media (max-width: 1000px) {
+  .itin-layout { grid-template-columns: minmax(0, 1fr); }
+  .day-rail { position: static; flex-direction: row; overflow-x: auto; padding-bottom: 6px; }
+  .day-rail-btn { min-width: 150px; }
+}
 
 /* ---------- Day panel ---------- */
 .day-panel-head { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; flex-wrap: wrap; }
