@@ -38,5 +38,5 @@ app.use('/uploads', requireAuth, express.static(path.join(__dirname, 'uploads'))
 app.use((req, res) => res.status(404).json({ error: 'Not found' }));
 
 app.listen(PORT, () => {
-  console.log(`Trip WAS listening on http://localhost:${PORT}`);
+  console.log(`Trip WAS listening on http://localhost:${PORT} (started ${new Date().toISOString()})`);
 });
