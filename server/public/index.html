@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>방콕·파타야 트립</title>
 <link rel="stylesheet" href="/css/app.css">
+<script>
+  // Apply saved theme before first paint to avoid a flash of the wrong theme.
+  // Defaults to light even if the OS/browser is set to dark mode.
+  (function () {
+    try {
+      document.documentElement.dataset.theme = localStorage.getItem('theme') || 'light';
+    } catch (e) {}
+  })();
+</script>
 </head>
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -30,6 +39,7 @@
       <div class="tab-pill" id="tabPill"></div>
     </div>
     <div class="spacer"></div>
+    <button class="theme-toggle" id="themeToggle" title="화면 밝기 전환">☀️</button>
     <button class="logout-btn" id="logoutBtn">로그아웃</button>
   </nav>
 

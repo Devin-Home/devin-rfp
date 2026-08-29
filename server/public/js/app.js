@@ -47,6 +47,23 @@ document.querySelectorAll('.tab').forEach((btn) => {
 window.addEventListener('load', () => moveTabPill(document.querySelector('.tab.active')));
 window.addEventListener('resize', () => moveTabPill(document.querySelector('.tab.active')));
 
+/* ---------------- Theme toggle ---------------- */
+const themeToggle = document.getElementById('themeToggle');
+function applyThemeIcon() {
+  const isDark = document.documentElement.dataset.theme === 'dark';
+  themeToggle.textContent = isDark ? '🌙' : '☀️';
+  themeToggle.title = isDark ? '밝은 화면으로 전환' : '어두운 화면으로 전환';
+}
+if (themeToggle) {
+  applyThemeIcon();
+  themeToggle.addEventListener('click', () => {
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    applyThemeIcon();
+  });
+}
+
 document.getElementById('logoutBtn').addEventListener('click', async () => {
   await api.post('/api/auth/logout');
   window.location.href = '/login.html';
@@ -76,7 +93,7 @@ function eventFormHTML(dayId, ev) {
   return `
     <form class="inline-form" data-act="save-event" data-day-id="${dayId}" data-id="${e.id || ''}">
       <div class="form-grid">
-        <div class="form-row"><label class="form-label">시간</label><input class="form-input" name="time" value="${esc(e.time)}" placeholder="09:00"></div>
+        <div class="form-row"><label class="form-label">시간</label><input class="form-input" name="time" value="${esc(e.time)}" placeholder="09:00" inputmode="numeric" maxlength="5" data-autotime="1"></div>
         <div class="form-row"><label class="form-label">종류</label>
           <select class="form-input" name="type">
             <option value="activity" ${e.type === 'activity' ? 'selected' : ''}>활동</option>
@@ -213,6 +230,17 @@ async function loadDays() {
   renderDays();
   populateDaySelect();
 }
+
+function formatTimeValue(digits) {
+  if (digits.length <= 2) return digits;
+  if (digits.length === 3) return `${digits.slice(0, 1)}:${digits.slice(1)}`;
+  return `${digits.slice(0, 2)}:${digits.slice(2, 4)}`;
+}
+document.getElementById('daysContainer').addEventListener('input', (e) => {
+  if (!e.target.matches('[data-autotime]')) return;
+  const digits = e.target.value.replace(/\D/g, '').slice(0, 4);
+  e.target.value = formatTimeValue(digits);
+});
 
 document.getElementById('daysContainer').addEventListener('click', async (e) => {
   const btn = e.target.closest('button[data-act]');
