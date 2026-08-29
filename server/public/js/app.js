@@ -541,6 +541,35 @@ if (fxInput) {
   });
 }
 
+const fxFetchBtn = document.getElementById('fxFetchBtn');
+const fxUpdatedEl = document.getElementById('fxUpdated');
+async function fetchTodayFx(interactive) {
+  if (!fxInput) return;
+  if (fxFetchBtn) { fxFetchBtn.disabled = true; fxFetchBtn.textContent = '⏳ 조회 중...'; }
+  try {
+    const data = await api.get('/api/fx');
+    if (data && data.rate) {
+      const rounded = Math.round(data.rate * 100) / 100;
+      fxInput.value = rounded;
+      localStorage.setItem('krwPerThb', rounded);
+      renderSummary();
+      renderExpenses();
+      if (fxUpdatedEl) {
+        const dateStr = new Date(data.updated_at).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
+        fxUpdatedEl.textContent = data.stale
+          ? `⚠️ ${dateStr} 기준 (재조회 실패, 이전 값 사용)`
+          : `${dateStr} 환율 기준 · frankfurter.app`;
+      }
+    }
+  } catch (e) {
+    if (fxUpdatedEl) fxUpdatedEl.textContent = '환율 조회 실패 — 직접 입력해주세요';
+    if (interactive) alert('환율 조회에 실패했습니다. 직접 입력해주세요.');
+  } finally {
+    if (fxFetchBtn) { fxFetchBtn.disabled = false; fxFetchBtn.textContent = '🔄 오늘 환율'; }
+  }
+}
+if (fxFetchBtn) fxFetchBtn.addEventListener('click', () => fetchTodayFx(true));
+
 const paymentFilterEl = document.getElementById('paymentFilter');
 if (paymentFilterEl) {
   paymentFilterEl.addEventListener('click', (e) => {
@@ -754,6 +783,7 @@ lightbox.addEventListener('click', () => lightbox.classList.remove('open'));
     document.getElementById('expenseForm').date.value = new Date().toISOString().slice(0, 10);
     await loadDays(); // gallery grouping needs `days` populated first
     await Promise.all([loadExpenses(), loadImages()]);
+    if (!localStorage.getItem('krwPerThb')) fetchTodayFx(false); // first-ever visit: seed a real rate instead of the 41 fallback
   } catch (err) {
     console.error('init failed:', err);
     const container = document.getElementById('daysContainer');
