@@ -288,6 +288,24 @@ input[type="date"].form-input { font-size: 14px; }
 #addDayBtn { margin-top: 4px; }
 
 /* ---------- Expenses ---------- */
+.expense-total-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md);
+  padding: 14px 18px; margin-bottom: 16px; box-shadow: var(--shadow);
+}
+.expense-total-info { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.expense-total-info .lbl { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; text-transform: uppercase; color: var(--ink-faint); letter-spacing: .04em; }
+.expense-total-info .num { font-family: 'Fraunces', serif; font-weight: 700; font-size: 21px; color: var(--teal-strong); }
+.expense-total-info .thb { font-size: 12.5px; color: var(--ink-faint); }
+
+.expense-body-wrap {
+  display: grid; grid-template-rows: 1fr; overflow: hidden;
+  transition: grid-template-rows .25s ease;
+}
+.expense-body-wrap.collapsed { grid-template-rows: 0fr; }
+.expense-body-wrap > .expense-body { overflow: hidden; min-height: 0; }
+@media (prefers-reduced-motion: reduce) { .expense-body-wrap { transition: none; } }
+
 .summary-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 22px; }
 .summary-card {
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); padding: 16px 14px;

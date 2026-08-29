@@ -615,6 +615,34 @@ async function loadExpenses() {
   if (days.length) renderDays(); // refresh linked-expense info shown on event rows
 }
 
+function renderExpenseTotalBar() {
+  const total = expenses.reduce((s, e) => s + e.amount_thb, 0);
+  const krwEl = document.getElementById('expenseTotalKrw');
+  const thbEl = document.getElementById('expenseTotalThb');
+  if (krwEl) krwEl.textContent = `${krw(total)}원`;
+  if (thbEl) thbEl.textContent = `฿${total.toLocaleString('ko-KR')}`;
+}
+
+let expensesCollapsed = true; // default: only the total bar shows, rest folded
+try {
+  const saved = localStorage.getItem('expensesCollapsed');
+  if (saved !== null) expensesCollapsed = saved === '1';
+} catch (e) {}
+const expenseBodyWrap = document.getElementById('expenseBodyWrap');
+const expenseFoldBtn = document.getElementById('expenseFoldBtn');
+function applyExpenseFold() {
+  if (expenseBodyWrap) expenseBodyWrap.classList.toggle('collapsed', expensesCollapsed);
+  if (expenseFoldBtn) expenseFoldBtn.textContent = expensesCollapsed ? '펼치기' : '접기';
+}
+if (expenseFoldBtn) {
+  expenseFoldBtn.addEventListener('click', () => {
+    expensesCollapsed = !expensesCollapsed;
+    try { localStorage.setItem('expensesCollapsed', expensesCollapsed ? '1' : '0'); } catch (e) {}
+    applyExpenseFold();
+  });
+}
+applyExpenseFold();
+
 function renderSummary() {
   const list = filteredExpenses();
   const total = list.reduce((s, e) => s + e.amount_thb, 0);
@@ -631,6 +659,7 @@ function renderSummary() {
     ...Object.entries(byPayer).map(([p, v]) => moneyCard(v, `${esc(p)} 결제`)),
   ];
   strip.innerHTML = cards.join('');
+  renderExpenseTotalBar();
 }
 
 function expenseLinkTag(e) {
