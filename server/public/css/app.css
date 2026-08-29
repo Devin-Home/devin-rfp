@@ -134,10 +134,12 @@ input, select, textarea { font: inherit; color: inherit; }
   padding: 9px 18px; background: var(--surface-2); border-bottom: 1px solid var(--line);
   font-size: 12.5px; color: var(--ink-soft); min-height: 17px;
 }
-.weather-strip:empty { display: none; }
+.weather-items { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.weather-items:empty { display: none; }
 .weather-item { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
 .weather-item .city { font-weight: 700; color: var(--ink); }
 .weather-item .temp { font-family: 'IBM Plex Mono', monospace; font-weight: 700; color: var(--teal-strong); }
+#thClock .clock-time { font-family: 'IBM Plex Mono', monospace; font-weight: 700; color: var(--teal-strong); }
 .weather-sep { color: var(--ink-faint); }
 
 .wrap { max-width: 920px; margin: 0 auto; padding: 30px 20px 90px; }

@@ -80,15 +80,29 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   window.location.href = '/login.html';
 });
 
+/* ---------------- Thailand clock ---------------- */
+
+function updateThailandClock() {
+  const el = document.getElementById('thClock');
+  if (!el) return;
+  const now = new Date();
+  const time = new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit', hour12: false }).format(now);
+  const weekday = new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Bangkok', weekday: 'short' }).format(now);
+  el.innerHTML = `<span class="ic">🕐</span> <span class="city">태국 현지시간</span> <span class="clock-time">${time}</span> <span class="cond">(${weekday})</span>`;
+}
+updateThailandClock();
+setInterval(updateThailandClock, 30000);
+
 /* ---------------- Weather ---------------- */
 
 async function loadWeather() {
-  const el = document.getElementById('weatherStrip');
+  const el = document.getElementById('weatherItems');
   if (!el) return;
   try {
     const data = await api.get('/api/weather');
     const cities = (data && data.cities) || [];
-    el.innerHTML = cities
+    if (!cities.length) { el.innerHTML = ''; return; }
+    el.innerHTML = '<span class="weather-sep">·</span>' + cities
       .map((c) => `
         <span class="weather-item">
           <span class="ic">${c.icon}</span>
@@ -98,7 +112,7 @@ async function loadWeather() {
         </span>`)
       .join('<span class="weather-sep">·</span>');
   } catch (e) {
-    el.innerHTML = ''; // fail silently — the strip just collapses (see .weather-strip:empty)
+    el.innerHTML = ''; // fail silently — just the clock keeps showing
   }
 }
 
