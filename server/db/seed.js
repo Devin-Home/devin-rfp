@@ -30,7 +30,7 @@ const seedDays = (function seedDays() {
         { time: '14:30', type: 'meal', name: '쿤댕 꾸어이짭 유안 점심', desc: '카오산 인근 베트남식 롤 쌀국수.', map_query: 'Khun Daeng Kuay Jub Yuan Bangkok' },
         { time: '15:30', type: 'activity', name: '카오산 로드 프리마켓', map_query: 'Khao San Road Bangkok' },
         { time: '17:00', type: 'activity', name: '택시로 호텔 복귀 & 휴식' },
-        { time: '19:00', type: 'meal', name: '엠쿼티어 헬릭스 푸드코트 저녁', desc: '호텔 도보 5분. 1인 150~300밧.', map_query: 'EmQuartier Helix Quartier Food Court Bangkok' },
+        { time: '19:00', type: 'meal', name: '엠쿼티어 헬릭스 푸드코트 저녁', desc: '호텔 도보 5분. 1인 150~300바트.', map_query: 'EmQuartier Helix Quartier Food Court Bangkok' },
       ],
     },
     {
@@ -54,9 +54,9 @@ const seedDays = (function seedDays() {
       events: [
         { time: '10:00', type: 'activity', name: '더 블레스 호텔 체크아웃' },
         { time: '10:30', type: 'activity', name: '방콕 → 파타야 이동 (밴 대절, 약 2시간)' },
-        { time: '13:00', type: 'meal', name: '체크인 & 터미널 21 점심', desc: '팟타이 50밧, 카오카무 60밧 등 1인 100~200밧.', map_query: 'Terminal 21 Pattaya' },
+        { time: '13:00', type: 'meal', name: '체크인 & 터미널 21 점심', desc: '팟타이 50바트, 카오카무 60바트 등 1인 100~200바트.', map_query: 'Terminal 21 Pattaya' },
         { time: '15:00', type: 'activity', name: '파타야 수상시장 (플로팅 마켓)', map_query: 'Pattaya Floating Market' },
-        { time: '18:30', type: 'meal', name: '파타야 나이트 바자 (가벼운 저녁)', desc: '스트리트푸드 30~80밧 선.', map_query: 'Pattaya Night Bazaar' },
+        { time: '18:30', type: 'meal', name: '파타야 나이트 바자 (가벼운 저녁)', desc: '스트리트푸드 30~80바트 선.', map_query: 'Pattaya Night Bazaar' },
       ],
     },
     {
@@ -67,7 +67,7 @@ const seedDays = (function seedDays() {
         { time: '12:30', type: 'meal', name: '파타야 복귀 후 점심' },
         { time: '14:30', type: 'activity', name: '진리의 성전 (Sanctuary of Truth)', map_query: 'Sanctuary of Truth Pattaya' },
         { time: '16:30', type: 'activity', name: '나클르아 인근 마사지', map_query: 'Thai Massage Naklua Pattaya' },
-        { time: '19:00', type: 'meal', name: '뿌펜 파타야 저녁', desc: '게커리로 유명. 1인 약 500~1,000밧.', map_query: 'Pupen Seafood Pattaya' },
+        { time: '19:00', type: 'meal', name: '뿌펜 파타야 저녁', desc: '게커리로 유명. 1인 약 500~1,000바트.', map_query: 'Pupen Seafood Pattaya' },
       ],
     },
     {
@@ -78,7 +78,7 @@ const seedDays = (function seedDays() {
       events: [
         { time: '10:00', type: 'activity', name: '호텔 제이 체크아웃' },
         { time: '10:30', type: 'activity', name: '더 젬스 풀빌라 체크인', desc: '외출 없이 그랩 배달로 끼니 해결, 온전히 휴식.' },
-        { time: '12:30', type: 'meal', name: '그랩 배달 점심', desc: 'MK / S&P 추천, 1인 120~300밧.' },
+        { time: '12:30', type: 'meal', name: '그랩 배달 점심', desc: 'MK / S&P 추천, 1인 120~300바트.' },
         { time: '13:30', type: 'activity', name: '프라이빗 풀 물놀이 & 자유시간' },
         { time: '19:00', type: 'meal', name: '그랩 배달 저녁 또는 빌라 앞 한식당', desc: '삼겹살·파전 등 주문 가능.' },
       ],

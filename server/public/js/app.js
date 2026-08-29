@@ -122,13 +122,13 @@ function eventExpenseFormHTML(day, ev) {
             <option>카드</option><option>현금</option>
           </select>
         </div>
-        <div class="form-row"><label class="form-label">금액(밧)</label><input class="form-input" type="number" step="0.01" name="amount_thb" required></div>
+        <div class="form-row"><label class="form-label">금액(바트)</label><input class="form-input" type="number" step="0.01" name="amount_thb" required></div>
         <div class="form-row"><label class="form-label">결제자</label><input class="form-input" name="payer" placeholder="예: A가족"></div>
         <div class="form-row" style="grid-column: 1 / -1;"><label class="form-label">내용</label><input class="form-input" name="description" value="${esc(ev.name)}"></div>
       </div>
       <div class="btn-bar">
         <button class="btn" type="button" data-act="cancel-event-expense">취소</button>
-        <button class="btn btn-primary" type="submit">지출 저장</button>
+        <button class="btn btn-primary" type="submit">비용 저장</button>
       </div>
     </form>`;
 }
@@ -144,7 +144,7 @@ function eventRowHTML(day, ev) {
         ${ev.memo ? `<div class="memo">📝 ${esc(ev.memo)}</div>` : ''}
         ${ev.map_query ? `<a class="maplink" href="${mapLink(ev.map_query)}" target="_blank" rel="noopener">📍 지도</a>` : ''}
         ${eventExpensesHTML(ev)}
-        ${addingExpenseFor === ev.id ? eventExpenseFormHTML(day, ev) : `<button class="btn btn-xs" data-act="add-event-expense" data-id="${ev.id}">💵 지출 추가</button>`}
+        ${addingExpenseFor === ev.id ? eventExpenseFormHTML(day, ev) : `<button class="btn btn-xs" data-act="add-event-expense" data-id="${ev.id}">💵 비용 추가</button>`}
       </div>
       <div class="row-actions">
         <button class="icon-btn" data-act="edit-event" data-id="${ev.id}" title="수정">✏️</button>
@@ -332,7 +332,7 @@ document.getElementById('daysContainer').addEventListener('click', async (e) => 
   } else if (act === 'edit-hotel') { editingHotel = id; renderDays(); }
   else if (act === 'cancel-hotel') { editingHotel = null; renderDays(); }
   else if (act === 'edit-event') { editingEvent = id; addingEventFor = null; renderDays(); }
-  else if (act === 'cancel-event') { editingEvent = null; renderDays(); }
+  else if (act === 'cancel-event') { editingEvent = null; addingEventFor = null; renderDays(); }
   else if (act === 'del-event') {
     if (confirm('이 항목을 삭제할까요?')) {
       const day = days.find((d) => d.events.some((ev) => ev.id === id));
