@@ -101,12 +101,19 @@ input, select, textarea { font: inherit; color: inherit; }
   font-family: 'Fraunces', serif; font-weight: 600; font-size: 16.5px;
   padding: 15px 18px 15px 0; white-space: nowrap; letter-spacing: -.01em;
 }
+.tabs { position: relative; display: flex; align-items: center; }
 .tab {
-  border: none; background: none; padding: 16px 15px; font-weight: 600; font-size: 14.5px; color: var(--ink-faint);
-  border-bottom: 2px solid transparent; white-space: nowrap; position: relative; transition: color .15s ease;
+  border: none; background: none; padding: 14px 16px; font-weight: 600; font-size: 14.5px; color: var(--ink-faint);
+  white-space: nowrap; position: relative; z-index: 1; transition: color .2s ease;
 }
 .tab:hover { color: var(--ink); }
-.tab.active { color: var(--teal-strong); border-bottom-color: var(--teal); }
+.tab.active { color: var(--teal-strong); }
+.tab-pill {
+  position: absolute; top: 6px; bottom: 6px; left: 0; width: 0;
+  background: var(--teal-soft); border-radius: 999px; z-index: 0;
+  transition: left .25s cubic-bezier(.4,0,.2,1), width .25s cubic-bezier(.4,0,.2,1);
+}
+@media (prefers-reduced-motion: reduce) { .tab-pill { transition: none; } }
 .topbar .spacer { flex: 1; }
 .logout-btn {
   border: 1px solid var(--line); background: var(--surface-2); border-radius: 999px; padding: 7px 15px;
@@ -174,18 +181,24 @@ input, select, textarea { font: inherit; color: inherit; }
 .day-card {
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg);
   box-shadow: var(--shadow); margin-bottom: 20px; overflow: hidden;
-  transition: box-shadow .2s ease, transform .2s ease;
+  transition: box-shadow .2s ease, transform .2s ease, opacity .5s ease, transform .5s ease;
 }
-.day-card:hover { box-shadow: var(--shadow-lg); }
+.day-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+.day-card.reveal { opacity: 0; transform: translateY(16px); }
+.day-card.reveal.in-view { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .day-card.reveal { opacity: 1; transform: none; } }
 .day-card-head { display: flex; align-items: center; gap: 14px; padding: 17px 20px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
 .day-card-head .badge {
-  width: 40px; height: 40px; border-radius: 50%; background: var(--teal-soft); color: var(--teal-strong);
-  display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-weight: 700;
-  font-size: 15px; flex-shrink: 0; box-shadow: 0 0 0 3px var(--bg), 0 0 0 4px var(--line);
+  width: 42px; height: 42px; border-radius: 50%; background: var(--teal-soft); color: var(--teal-strong);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 4px var(--line);
 }
 .day-card-head .badge.pty { background: var(--gold-soft); color: var(--gold); }
+.day-card-head .badge svg { width: 21px; height: 21px; }
 .day-card-head .meta { flex: 1; min-width: 0; }
 .day-card-head .meta .date { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--ink-faint); letter-spacing: .02em; }
+.day-card-head .meta .date .daynum { color: var(--teal-strong); font-weight: 700; }
+.day-card-head .badge.pty ~ .meta .date .daynum { color: var(--gold); }
 .day-card-head .meta .title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; margin-top: 1px; }
 .day-card-body { padding: 8px 20px 18px; }
 .event-row { display: grid; grid-template-columns: 62px 1fr auto; gap: 10px; align-items: start; padding: 11px 0; border-bottom: 1px dashed var(--line); }
@@ -294,4 +307,20 @@ td.amount { text-align: right; font-family: 'IBM Plex Mono', monospace; font-wei
 }
 .app-footer .divider {
   width: 40px; height: 2px; background: var(--line); margin: 0 auto 14px; border-radius: 2px;
+}
+
+/* ---------- Loading skeleton ---------- */
+.skeleton-card {
+  height: 128px; border-radius: var(--radius-lg); margin-bottom: 20px;
+  background: linear-gradient(100deg, var(--surface-2) 30%, var(--surface) 50%, var(--surface-2) 70%);
+  background-size: 240% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+  border: 1px solid var(--line);
+}
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -40% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-card { animation: none; background: var(--surface-2); }
 }

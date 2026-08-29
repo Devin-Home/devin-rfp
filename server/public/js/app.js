@@ -8,6 +8,11 @@ let addingEventFor = null; // day id currently showing "new event" form
 
 const CITY_LABEL = { bkk: '방콕', pty: '파타야' };
 const TYPE_LABEL = { activity: '활동', meal: '식사', flight: '항공' };
+const ICONS = ['plane', 'temple', 'pawprint', 'van', 'anchor', 'droplet', 'sun', 'bag', 'suitcase'];
+const ICON_LABEL = {
+  plane: '✈️ 비행기', temple: '🛕 사원', pawprint: '🐾 액티비티', van: '🚐 이동',
+  anchor: '⚓ 바다/투어', droplet: '💧 물놀이', sun: '☀️ 휴식', bag: '👜 쇼핑', suitcase: '🧳 여행',
+};
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -24,14 +29,23 @@ function fmtDate(d) {
 }
 
 /* ---------------- Tabs ---------------- */
+const tabPill = document.getElementById('tabPill');
+function moveTabPill(btn) {
+  if (!tabPill || !btn) return;
+  tabPill.style.left = `${btn.offsetLeft}px`;
+  tabPill.style.width = `${btn.offsetWidth}px`;
+}
 document.querySelectorAll('.tab').forEach((btn) => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach((b) => b.classList.remove('active'));
     document.querySelectorAll('.view').forEach((v) => v.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById(`view-${btn.dataset.view}`).classList.add('active');
+    moveTabPill(btn);
   });
 });
+window.addEventListener('load', () => moveTabPill(document.querySelector('.tab.active')));
+window.addEventListener('resize', () => moveTabPill(document.querySelector('.tab.active')));
 
 document.getElementById('logoutBtn').addEventListener('click', async () => {
   await api.post('/api/auth/logout');
@@ -127,7 +141,12 @@ function dayHeadHTML(day) {
               <option value="pty" ${day.city === 'pty' ? 'selected' : ''}>파타야</option>
             </select>
           </div>
-          <div class="form-row" style="grid-column: span 2;"><label class="form-label">제목</label><input class="form-input" name="title" value="${esc(day.title)}" required></div>
+          <div class="form-row"><label class="form-label">아이콘</label>
+            <select class="form-input" name="icon">
+              ${ICONS.map((ic) => `<option value="${ic}" ${day.icon === ic ? 'selected' : ''}>${ICON_LABEL[ic]}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-row" style="grid-column: 1 / -1;"><label class="form-label">제목</label><input class="form-input" name="title" value="${esc(day.title)}" required></div>
         </div>
         <div class="btn-bar">
           <button class="btn" type="button" data-act="cancel-day">취소</button>
@@ -135,10 +154,11 @@ function dayHeadHTML(day) {
         </div>
       </form>`;
   }
+  const icon = ICONS.includes(day.icon) ? day.icon : 'bag';
   return `
-    <div class="badge ${day.city === 'pty' ? 'pty' : ''}">${day.day_number}</div>
+    <div class="badge ${day.city === 'pty' ? 'pty' : ''}"><svg><use href="#i-${icon}"></use></svg></div>
     <div class="meta">
-      <div class="date mono">${fmtDate(day.date)} · ${CITY_LABEL[day.city] || day.city}</div>
+      <div class="date mono"><span class="daynum">Day ${day.day_number}</span> · ${fmtDate(day.date)} · ${CITY_LABEL[day.city] || day.city}</div>
       <div class="title">${esc(day.title)}</div>
     </div>
     <div class="row-actions">
@@ -147,9 +167,9 @@ function dayHeadHTML(day) {
     </div>`;
 }
 
-function dayCardHTML(day) {
+function dayCardHTML(day, revealClass) {
   return `
-    <div class="day-card" data-day-id="${day.id}">
+    <div class="day-card ${revealClass}" data-day-id="${day.id}">
       <div class="day-card-head">${dayHeadHTML(day)}</div>
       <div class="day-card-body">
         ${(day.events || []).map((ev) => eventRowHTML(day, ev)).join('') || '<p class="empty-hint">아직 등록된 일정이 없습니다.</p>'}
@@ -159,11 +179,33 @@ function dayCardHTML(day) {
     </div>`;
 }
 
+let hasRevealedDaysOnce = false;
 function renderDays() {
   const container = document.getElementById('daysContainer');
+  const revealClass = hasRevealedDaysOnce ? '' : 'reveal';
   container.innerHTML = days.length
-    ? days.map(dayCardHTML).join('')
+    ? days.map((d) => dayCardHTML(d, revealClass)).join('')
     : '<p class="empty-hint">아직 일정이 없습니다. 아래 버튼으로 첫 날짜를 추가해보세요.</p>';
+
+  if (!hasRevealedDaysOnce && days.length) {
+    hasRevealedDaysOnce = true;
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in-view');
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+      container.querySelectorAll('.day-card.reveal').forEach((el, i) => {
+        el.style.transitionDelay = `${Math.min(i * 60, 300)}ms`;
+        io.observe(el);
+      });
+    } else {
+      container.querySelectorAll('.day-card.reveal').forEach((el) => el.classList.add('in-view'));
+    }
+  }
 }
 
 async function loadDays() {
