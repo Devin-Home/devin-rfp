@@ -44,12 +44,16 @@
 * { box-sizing: border-box; }
 html, body { height: 100%; }
 body {
-  margin: 0; background: var(--bg); color: var(--ink);
+  margin: 0; background-color: var(--bg); color: var(--ink);
   font-family: 'Public Sans', -apple-system, 'Malgun Gothic', sans-serif;
   line-height: 1.55;
-  background-image: radial-gradient(circle, var(--line) 1px, transparent 1px);
-  background-size: 22px 22px;
-  background-attachment: fixed;
+  background-image:
+    radial-gradient(ellipse 620px 420px at 10% -8%, color-mix(in srgb, var(--gold) 24%, transparent), transparent 65%),
+    radial-gradient(ellipse 560px 460px at 108% 4%, color-mix(in srgb, var(--teal) 22%, transparent), transparent 60%),
+    radial-gradient(circle, var(--line) 1px, transparent 1px);
+  background-repeat: no-repeat, no-repeat, repeat;
+  background-size: auto, auto, 22px 22px;
+  background-attachment: fixed, fixed, fixed;
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
 }
