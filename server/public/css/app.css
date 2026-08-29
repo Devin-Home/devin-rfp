@@ -207,6 +207,20 @@ input, select, textarea { font: inherit; color: inherit; }
 .day-card-head .meta .date .daynum { color: var(--teal-strong); font-weight: 700; }
 .day-card-head .badge.pty ~ .meta .date .daynum { color: var(--gold); }
 .day-card-head .meta .title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; margin-top: 1px; }
+
+.fold-btn { order: -1; }
+.fold-chevron { display: inline-block; font-size: 13px; transition: transform .2s ease; }
+.fold-chevron.collapsed { transform: rotate(-90deg); }
+
+.day-card-body-wrap {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows .25s ease;
+}
+.day-card.collapsed .day-card-body-wrap { grid-template-rows: 0fr; }
+.day-card-body-wrap > .day-card-body { overflow: hidden; min-height: 0; }
+@media (prefers-reduced-motion: reduce) { .day-card-body-wrap { transition: none; } }
+
 .day-card-body { padding: 8px 20px 18px; }
 .event-row { display: grid; grid-template-columns: 62px 1fr auto; gap: 10px; align-items: start; padding: 11px 0; border-bottom: 1px dashed var(--line); }
 .event-row:last-child { border-bottom: none; }

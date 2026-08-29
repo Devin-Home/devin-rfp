@@ -6,6 +6,12 @@ let editingHotel = null; // day id currently showing hotel edit form
 let editingEvent = null; // event id currently showing its edit form
 let addingEventFor = null; // day id currently showing "new event" form
 
+let collapsedDays = new Set();
+try { collapsedDays = new Set(JSON.parse(localStorage.getItem('collapsedDays') || '[]')); } catch (e) {}
+function persistCollapsed() {
+  try { localStorage.setItem('collapsedDays', JSON.stringify([...collapsedDays])); } catch (e) {}
+}
+
 const CITY_LABEL = { bkk: '방콕', pty: '파타야' };
 const TYPE_LABEL = { activity: '활동', meal: '식사', flight: '항공' };
 const ICONS = ['plane', 'temple', 'pawprint', 'van', 'anchor', 'droplet', 'sun', 'bag', 'suitcase'];
@@ -172,7 +178,11 @@ function dayHeadHTML(day) {
       </form>`;
   }
   const icon = ICONS.includes(day.icon) ? day.icon : 'bag';
+  const collapsed = collapsedDays.has(day.id);
   return `
+    <button class="icon-btn fold-btn" data-act="toggle-day" data-id="${day.id}" title="${collapsed ? '펼치기' : '접기'}">
+      <span class="fold-chevron ${collapsed ? 'collapsed' : ''}">▾</span>
+    </button>
     <div class="badge ${day.city === 'pty' ? 'pty' : ''}"><svg><use href="#i-${icon}"></use></svg></div>
     <div class="meta">
       <div class="date mono"><span class="daynum">Day ${day.day_number}</span> · ${fmtDate(day.date)} · ${CITY_LABEL[day.city] || day.city}</div>
@@ -185,14 +195,15 @@ function dayHeadHTML(day) {
 }
 
 function dayCardHTML(day, revealClass) {
+  const collapsed = collapsedDays.has(day.id);
   return `
-    <div class="day-card ${revealClass}" data-day-id="${day.id}">
+    <div class="day-card ${revealClass} ${collapsed ? 'collapsed' : ''}" data-day-id="${day.id}">
       <div class="day-card-head">${dayHeadHTML(day)}</div>
-      <div class="day-card-body">
+      <div class="day-card-body-wrap"><div class="day-card-body">
         ${(day.events || []).map((ev) => eventRowHTML(day, ev)).join('') || '<p class="empty-hint">아직 등록된 일정이 없습니다.</p>'}
         ${addingEventFor === day.id ? eventFormHTML(day.id, null) : `<button class="btn btn-sm" data-act="add-event" data-id="${day.id}" style="margin-top:10px;">+ 항목 추가</button>`}
         ${hotelBoxHTML(day)}
-      </div>
+      </div></div>
     </div>`;
 }
 
@@ -223,6 +234,7 @@ function renderDays() {
       container.querySelectorAll('.day-card.reveal').forEach((el) => el.classList.add('in-view'));
     }
   }
+  if (typeof updateFoldAllLabel === 'function') updateFoldAllLabel();
 }
 
 async function loadDays() {
@@ -248,7 +260,12 @@ document.getElementById('daysContainer').addEventListener('click', async (e) => 
   const act = btn.dataset.act;
   const id = btn.dataset.id ? Number(btn.dataset.id) : null;
 
-  if (act === 'edit-day') { editingDay = id; renderDays(); }
+  if (act === 'toggle-day') {
+    if (collapsedDays.has(id)) collapsedDays.delete(id); else collapsedDays.add(id);
+    persistCollapsed();
+    renderDays();
+  }
+  else if (act === 'edit-day') { editingDay = id; collapsedDays.delete(id); renderDays(); }
   else if (act === 'cancel-day') { editingDay = null; renderDays(); }
   else if (act === 'del-day') {
     if (confirm('이 날짜와 안의 모든 일정을 삭제할까요?')) { await api.del(`/api/days/${id}`); await loadDays(); }
@@ -305,6 +322,19 @@ document.getElementById('addDayBtn').addEventListener('click', async () => {
   editingDay = day.id;
   renderDays();
   populateDaySelect();
+});
+
+const foldAllBtn = document.getElementById('foldAllBtn');
+function updateFoldAllLabel() {
+  const allCollapsed = days.length > 0 && days.every((d) => collapsedDays.has(d.id));
+  foldAllBtn.textContent = allCollapsed ? '전체 펼치기' : '전체 접기';
+}
+foldAllBtn.addEventListener('click', () => {
+  const allCollapsed = days.length > 0 && days.every((d) => collapsedDays.has(d.id));
+  if (allCollapsed) collapsedDays.clear();
+  else days.forEach((d) => collapsedDays.add(d.id));
+  persistCollapsed();
+  renderDays();
 });
 
 /* ---------------- Expenses ---------------- */
