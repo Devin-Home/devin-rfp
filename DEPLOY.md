@@ -125,10 +125,24 @@ sudo certbot --nginx -d trip.example.com
 Developer settings → Personal access tokens → Fine-grained tokens, 이 저장소만 Contents: Read 권한).
 서버가 `git pull`할 때 인증용으로만 씁니다.
 
-```bash
-cd /opt
-git clone -b claude/travel-itinerary-3it5fs https://<TOKEN>@github.com/Devin-Home/devin-rfp.git trip-new
+**주의**: 토큰을 URL 안에 `https://<TOKEN>@github.com/...`처럼 직접 넣는 긴 한 줄 명령은 붙여넣기 중
+터미널이 줄바꿈을 끼워넣어 깨지기 쉽습니다(Bastion류 웹 터미널에서 특히). 아래처럼 **git이 따로
+물어보는 비밀번호 프롬프트에 붙여넣는 방식**이 훨씬 안전합니다 — 토큰이 다른 텍스트 없이 그 한 줄에만 있으면 됩니다.
 
+먼저 인증 정보를 저장해두도록 설정합니다(이후 `git pull`이 매번 비밀번호를 묻지 않게 하기 위함 —
+`deploy.sh`가 자동으로 돌 때 필요합니다). **아래 명령들은 root로 실행**해주세요 (`root@...#` 프롬프트 상태):
+
+```bash
+git config --global credential.helper store
+cd /opt
+git clone -b claude/travel-itinerary-3it5fs https://github.com/Devin-Home/devin-rfp.git trip-new
+```
+`Username for 'https://github.com':` → GitHub 아이디 입력
+`Password for 'https://<아이디>@github.com':` → 위에서 만든 토큰 붙여넣기 (화면에 안 보여도 정상입니다)
+
+한 번 성공하면 `/root/.git-credentials`에 저장되어, 이후 `git pull`(및 `deploy.sh`, cron)은 다시 묻지 않습니다.
+
+```bash
 # 기존 데이터(DB, 업로드 사진, .env) 새 clone으로 복사
 cp /opt/trip/server/.env /opt/trip-new/server/.env
 cp -r /opt/trip/server/data /opt/trip-new/server/
