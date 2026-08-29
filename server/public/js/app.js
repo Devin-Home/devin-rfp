@@ -100,7 +100,7 @@ function eventExpensesHTML(ev) {
         <div class="event-expense-item">
           <span class="pm-pill">${esc(e.payment_method || '카드')}</span>
           <span class="desc">${esc(e.description || e.category)}</span>
-          <span class="amount mono">฿${Number(e.amount_thb).toLocaleString('ko-KR')}</span>
+          <span class="amount mono">${e.currency === 'krw' ? `₩${Number(e.amount_krw ?? Math.round(e.amount_thb * exchangeRate())).toLocaleString('ko-KR')}` : `฿${Number(e.amount_thb).toLocaleString('ko-KR')}`}</span>
           <button class="icon-btn danger sm" data-act="del-expense-from-event" data-id="${e.id}" title="삭제">🗑</button>
         </div>`).join('')}
     </div>`;
@@ -342,6 +342,18 @@ document.getElementById('daysContainer').addEventListener('input', (e) => {
   e.target.value = formatTimeValue(digits);
 });
 
+function applyCurrencyStep(selectEl) {
+  const form = selectEl.closest('form');
+  const amountInput = form && form.querySelector('input[name="amount_input"]');
+  if (!amountInput) return;
+  const isKrw = selectEl.value === 'krw';
+  amountInput.step = isKrw ? '1' : '0.01';
+  amountInput.setAttribute('inputmode', isKrw ? 'numeric' : 'decimal');
+}
+document.getElementById('daysContainer').addEventListener('change', (e) => {
+  if (e.target.matches('select[name="currency"]')) applyCurrencyStep(e.target);
+});
+
 document.getElementById('daysContainer').addEventListener('click', async (e) => {
   const btn = e.target.closest('button[data-act]');
   if (!btn) return;
@@ -420,8 +432,7 @@ document.getElementById('daysContainer').addEventListener('submit', async (e) =>
     renderDays();
   } else if (act === 'save-event-expense') {
     await api.post('/api/expenses', {
-      ...fd,
-      amount_thb: amountToThb(fd),
+      ...applyExpenseAmounts(fd),
       day_id: form.dataset.dayId,
       event_id: form.dataset.eventId,
     });
@@ -464,6 +475,11 @@ function krw(thb) {
 function amountToThb(fd) {
   const raw = Number(fd.amount_input) || 0;
   return fd.currency === 'krw' ? +(raw / exchangeRate()).toFixed(2) : raw;
+}
+function applyExpenseAmounts(fd) {
+  fd.amount_thb = amountToThb(fd);
+  if (fd.currency === 'krw') fd.amount_krw = Number(fd.amount_input) || 0;
+  return fd;
 }
 
 const fxInput = document.getElementById('fxRate');
@@ -530,6 +546,14 @@ function expenseLinkTag(e) {
   return '<span class="ink-faint">-</span>';
 }
 
+function expenseAmountHTML(e) {
+  if (e.currency === 'krw') {
+    const amt = e.amount_krw != null ? e.amount_krw : Math.round(e.amount_thb * exchangeRate());
+    return `<span class="amount-krw">${Number(amt).toLocaleString('ko-KR')}원</span>`;
+  }
+  return `<span class="amount-krw">${krw(e.amount_thb)}원</span><span class="amount-thb">฿${Number(e.amount_thb).toLocaleString('ko-KR')}</span>`;
+}
+
 function renderExpenses() {
   const tbody = document.getElementById('expenseRows');
   const list = filteredExpenses();
@@ -546,17 +570,22 @@ function renderExpenses() {
       <td data-label="연결">${expenseLinkTag(e)}</td>
       <td data-label="결제자">${esc(e.payer)}</td>
       <td data-label="메모">${esc(e.memo || '')}</td>
-      <td class="amount" data-label="금액"><span class="amount-krw">${krw(e.amount_thb)}원</span><span class="amount-thb">฿${Number(e.amount_thb).toLocaleString('ko-KR')}</span></td>
+      <td class="amount" data-label="금액">${expenseAmountHTML(e)}</td>
       <td class="row-del" data-label=""><button class="btn btn-sm btn-danger" data-id="${e.id}" data-act="del-expense">🗑 삭제</button></td>
     </tr>`).join('');
+}
+
+const expenseCurrencySelect = document.querySelector('#expenseForm select[name="currency"]');
+if (expenseCurrencySelect) {
+  expenseCurrencySelect.addEventListener('change', () => applyCurrencyStep(expenseCurrencySelect));
 }
 
 document.getElementById('expenseForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const fd = Object.fromEntries(new FormData(e.target).entries());
-  fd.amount_thb = amountToThb(fd);
-  await api.post('/api/expenses', fd);
+  await api.post('/api/expenses', applyExpenseAmounts(fd));
   e.target.reset();
+  if (expenseCurrencySelect) applyCurrencyStep(expenseCurrencySelect);
   await loadExpenses();
 });
 

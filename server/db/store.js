@@ -188,6 +188,8 @@ function createExpense(fields) {
     payment_method: fields.payment_method || '카드',
     description: fields.description || '',
     amount_thb: Number(fields.amount_thb) || 0,
+    currency: fields.currency === 'krw' ? 'krw' : 'thb',
+    amount_krw: fields.currency === 'krw' ? (Number(fields.amount_krw) || 0) : null,
     payer: fields.payer || '',
     memo: fields.memo || null,
     receipt_image: fields.receipt_image || null,
@@ -208,6 +210,8 @@ function updateExpense(id, fields) {
   if (fields.day_id !== undefined) expense.day_id = fields.day_id ? Number(fields.day_id) : null;
   if (fields.event_id !== undefined) expense.event_id = fields.event_id ? Number(fields.event_id) : null;
   if (fields.amount_thb !== undefined) expense.amount_thb = Number(fields.amount_thb);
+  if (fields.currency !== undefined) expense.currency = fields.currency === 'krw' ? 'krw' : 'thb';
+  if (fields.amount_krw !== undefined) expense.amount_krw = expense.currency === 'krw' ? (Number(fields.amount_krw) || 0) : null;
   persist();
   return expense;
 }
