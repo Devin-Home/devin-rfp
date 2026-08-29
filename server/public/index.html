@@ -86,7 +86,13 @@
             </select>
           </div>
           <div class="form-row"><label class="form-label">내용</label><input class="form-input" name="description" placeholder="예: 뿌펜 저녁"></div>
-          <div class="form-row"><label class="form-label">결제 금액(바트)</label><input class="form-input" type="number" step="0.01" name="amount_thb" required></div>
+          <div class="form-row"><label class="form-label">통화</label>
+            <select class="form-input" name="currency">
+              <option value="thb" selected>🇹🇭 바트</option>
+              <option value="krw">🇰🇷 원화</option>
+            </select>
+          </div>
+          <div class="form-row"><label class="form-label">결제 금액</label><input class="form-input" type="number" step="0.01" name="amount_input" required></div>
           <div class="form-row"><label class="form-label">결제자</label><input class="form-input" name="payer" placeholder="예: A가족"></div>
           <div class="form-row"><label class="form-label">메모</label><input class="form-input" name="memo"></div>
         </div>

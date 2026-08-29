@@ -145,7 +145,13 @@ function eventExpenseFormHTML(day, ev) {
             <option>카드</option><option>현금</option>
           </select>
         </div>
-        <div class="form-row"><label class="form-label">금액(바트)</label><input class="form-input" type="number" step="0.01" name="amount_thb" required></div>
+        <div class="form-row"><label class="form-label">통화</label>
+          <select class="form-input" name="currency">
+            <option value="thb" selected>🇹🇭 바트</option>
+            <option value="krw">🇰🇷 원화</option>
+          </select>
+        </div>
+        <div class="form-row"><label class="form-label">금액</label><input class="form-input" type="number" step="0.01" name="amount_input" required></div>
         <div class="form-row"><label class="form-label">결제자</label><input class="form-input" name="payer" placeholder="예: A가족"></div>
         <div class="form-row" style="grid-column: 1 / -1;"><label class="form-label">내용</label><input class="form-input" name="description" value="${esc(ev.name)}"></div>
       </div>
@@ -415,6 +421,7 @@ document.getElementById('daysContainer').addEventListener('submit', async (e) =>
   } else if (act === 'save-event-expense') {
     await api.post('/api/expenses', {
       ...fd,
+      amount_thb: amountToThb(fd),
       day_id: form.dataset.dayId,
       event_id: form.dataset.eventId,
     });
@@ -453,6 +460,10 @@ function exchangeRate() {
 }
 function krw(thb) {
   return Math.round(thb * exchangeRate()).toLocaleString('ko-KR');
+}
+function amountToThb(fd) {
+  const raw = Number(fd.amount_input) || 0;
+  return fd.currency === 'krw' ? +(raw / exchangeRate()).toFixed(2) : raw;
 }
 
 const fxInput = document.getElementById('fxRate');
@@ -543,6 +554,7 @@ function renderExpenses() {
 document.getElementById('expenseForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const fd = Object.fromEntries(new FormData(e.target).entries());
+  fd.amount_thb = amountToThb(fd);
   await api.post('/api/expenses', fd);
   e.target.reset();
   await loadExpenses();
