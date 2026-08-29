@@ -6,6 +6,7 @@ let editingHotel = null; // day id currently showing hotel edit form
 let editingEvent = null; // event id currently showing its edit form
 let addingEventFor = null; // day id currently showing "new event" form
 let addingExpenseFor = null; // event id currently showing "add expense" form
+let addingMemoFor = null; // event id currently showing "add/edit memo" form
 
 let collapsedDays = new Set();
 try { collapsedDays = new Set(JSON.parse(localStorage.getItem('collapsedDays') || '[]')); } catch (e) {}
@@ -105,6 +106,28 @@ function eventExpensesHTML(ev) {
     </div>`;
 }
 
+function memoBlockHTML(day, ev) {
+  if (addingMemoFor === ev.id) return eventMemoFormHTML(day, ev);
+  if (ev.memo) {
+    return `<div class="memo"><span>📝 ${esc(ev.memo)}</span><button class="icon-btn sm" data-act="edit-event-memo" data-id="${ev.id}" title="메모 수정">✏️</button></div>`;
+  }
+  return `<button class="btn btn-xs" data-act="add-event-memo" data-id="${ev.id}">📝 메모 추가</button>`;
+}
+
+function eventMemoFormHTML(day, ev) {
+  return `
+    <form class="inline-form memo-inline-form" data-act="save-event-memo" data-day-id="${day.id}" data-id="${ev.id}">
+      <div class="form-row" style="grid-column: 1 / -1;">
+        <label class="form-label">메모</label>
+        <input class="form-input" name="memo" value="${esc(ev.memo || '')}" placeholder="예: 동선 체크, 예약 여부, 특이사항">
+      </div>
+      <div class="btn-bar">
+        <button class="btn" type="button" data-act="cancel-event-memo">취소</button>
+        <button class="btn btn-primary" type="submit">메모 저장</button>
+      </div>
+    </form>`;
+}
+
 function eventExpenseFormHTML(day, ev) {
   const today = new Date().toISOString().slice(0, 10);
   const defaultCat = TYPE_CATEGORY[ev.type] || '기타';
@@ -141,8 +164,8 @@ function eventRowHTML(day, ev) {
       <div class="body">
         <div class="name">${esc(ev.name)}</div>
         ${ev.desc ? `<div class="desc">${esc(ev.desc)}</div>` : ''}
-        ${ev.memo ? `<div class="memo">📝 ${esc(ev.memo)}</div>` : ''}
         ${ev.map_query ? `<a class="maplink" href="${mapLink(ev.map_query)}" target="_blank" rel="noopener">📍 지도</a>` : ''}
+        ${memoBlockHTML(day, ev)}
         ${eventExpensesHTML(ev)}
         ${addingExpenseFor === ev.id ? eventExpenseFormHTML(day, ev) : `<button class="btn btn-xs" data-act="add-event-expense" data-id="${ev.id}">💵 비용 추가</button>`}
       </div>
@@ -154,7 +177,7 @@ function eventRowHTML(day, ev) {
 }
 
 function eventFormHTML(dayId, ev) {
-  const e = ev || { id: null, time: '', type: 'activity', name: '', desc: '', map_query: '', memo: '' };
+  const e = ev || { id: null, time: '', type: 'activity', name: '', desc: '', map_query: '' };
   return `
     <form class="inline-form" data-act="save-event" data-day-id="${dayId}" data-id="${e.id || ''}">
       <div class="form-grid">
@@ -168,7 +191,6 @@ function eventFormHTML(dayId, ev) {
         </div>
         <div class="form-row" style="grid-column: span 2;"><label class="form-label">이름</label><input class="form-input" name="name" value="${esc(e.name)}" required></div>
         <div class="form-row" style="grid-column: 1 / -1;"><label class="form-label">설명</label><input class="form-input" name="desc" value="${esc(e.desc)}"></div>
-        <div class="form-row" style="grid-column: 1 / -1;"><label class="form-label">메모</label><input class="form-input" name="memo" value="${esc(e.memo || '')}" placeholder="예: 예약 확인번호, 준비물 등"></div>
         <div class="form-row" style="grid-column: 1 / -1;"><label class="form-label">지도 검색어 (선택)</label><input class="form-input" name="map_query" value="${esc(e.map_query || '')}" placeholder="예: Wat Arun Bangkok"></div>
       </div>
       <div class="btn-bar">
@@ -343,6 +365,8 @@ document.getElementById('daysContainer').addEventListener('click', async (e) => 
   } else if (act === 'add-event') { addingEventFor = id; editingEvent = null; renderDays(); }
   else if (act === 'add-event-expense') { addingExpenseFor = id; renderDays(); }
   else if (act === 'cancel-event-expense') { addingExpenseFor = null; renderDays(); }
+  else if (act === 'add-event-memo' || act === 'edit-event-memo') { addingMemoFor = id; renderDays(); }
+  else if (act === 'cancel-event-memo') { addingMemoFor = null; renderDays(); }
   else if (act === 'del-expense-from-event') {
     if (confirm('이 지출 내역을 삭제할까요?')) {
       await api.del(`/api/expenses/${id}`);
@@ -380,6 +404,13 @@ document.getElementById('daysContainer').addEventListener('submit', async (e) =>
     if (idx >= 0) days[idx] = updated;
     editingEvent = null;
     addingEventFor = null;
+    renderDays();
+  } else if (act === 'save-event-memo') {
+    const eventId = form.dataset.id;
+    const updated = await api.put(`/api/days/events/${eventId}`, { memo: fd.memo || '' });
+    const idx = days.findIndex((d) => d.id === updated.id);
+    if (idx >= 0) days[idx] = updated;
+    addingMemoFor = null;
     renderDays();
   } else if (act === 'save-event-expense') {
     await api.post('/api/expenses', {

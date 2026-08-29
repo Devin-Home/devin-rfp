@@ -33,6 +33,13 @@ function persist() {
   fs.renameSync(tmp, FILE);
 }
 
+// Self-heal: older versions of createEvent/updateEvent persisted before re-sorting,
+// so a saved trip.json can have events out of time order. Re-sort on every startup.
+if (state.days.some((day) => day.events.length > 1)) {
+  state.days.forEach((day) => sortEvents(day));
+  persist();
+}
+
 function nextId(kind) {
   const id = state.nextIds[kind];
   state.nextIds[kind] += 1;
@@ -119,8 +126,9 @@ function createEvent(dayId, fields) {
     sort_order: maxOrder + 1,
   };
   day.events.push(event);
+  sortEvents(day);
   persist();
-  return sortEvents(day);
+  return day;
 }
 
 function findEventDay(eventId) {
@@ -135,8 +143,9 @@ function updateEvent(eventId, fields) {
   editable.forEach((k) => {
     if (fields[k] !== undefined) event[k] = fields[k];
   });
+  sortEvents(day);
   persist();
-  return sortEvents(day);
+  return day;
 }
 
 function deleteEvent(eventId) {
@@ -144,8 +153,9 @@ function deleteEvent(eventId) {
   if (!day) return null;
   day.events = day.events.filter((e) => e.id !== Number(eventId));
   state.expenses.forEach((e) => { if (e.event_id === Number(eventId)) e.event_id = null; });
+  sortEvents(day);
   persist();
-  return sortEvents(day);
+  return day;
 }
 
 /* ---------------- Expenses ---------------- */

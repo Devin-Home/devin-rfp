@@ -232,7 +232,9 @@ input, select, textarea { font: inherit; color: inherit; }
 .event-row .body .desc { font-size: 13px; color: var(--ink-soft); margin-top: 3px; line-height: 1.5; }
 .event-row .body .maplink { font-size: 12px; color: var(--teal-strong); display: inline-block; margin-top: 4px; text-decoration: none; }
 .event-row .body .maplink:hover { text-decoration: underline; }
-.event-row .body .memo { font-size: 12.5px; color: var(--ink-soft); margin-top: 5px; padding: 7px 10px; background: var(--surface-2); border-radius: var(--radius-sm); border: 1px dashed var(--line); line-height: 1.5; white-space: pre-wrap; }
+.event-row .body .memo { font-size: 12.5px; color: var(--ink-soft); margin-top: 5px; padding: 7px 10px; background: var(--surface-2); border-radius: var(--radius-sm); border: 1px dashed var(--line); line-height: 1.5; display: flex; align-items: flex-start; gap: 8px; }
+.event-row .body .memo span { flex: 1; min-width: 0; white-space: pre-wrap; }
+.event-row .body .memo .icon-btn { flex-shrink: 0; }
 .row-actions { display: flex; gap: 6px; }
 .icon-btn {
   border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius-sm); width: 27px; height: 27px;
