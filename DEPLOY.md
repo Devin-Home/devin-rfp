@@ -112,18 +112,102 @@ sudo certbot --nginx -d trip.example.com
 ```
 발급 후 `.env`의 `COOKIE_SECURE=true`로 바꾸고 `sudo systemctl restart trip-was`.
 
-## 9. 최신 커밋 반영하기
+## 9. 실시간 자동 배포 (GitHub Actions)
 
-수동으로 갱신할 때:
+지금까지는 파일을 압축해서 수동으로 올리는 방식이었는데, 이 저장소가 GitHub에 push될 때마다
+서버가 자동으로 최신 코드를 받아서 재시작하도록 연결할 수 있습니다. `push` 후 보통 몇 초~1분 안에 반영됩니다.
+
+### 9-1. `/opt/trip`을 진짜 git 저장소로 바꾸기 (최초 1회)
+
+지금까지는 tar 파일을 풀어놓은 일반 폴더라, git으로 관리되지 않습니다. 새로 clone해서 기존 데이터만 옮깁니다.
+
+먼저 GitHub에서 **읽기 전용 Personal Access Token**을 하나 만드세요 (github.com → Settings →
+Developer settings → Personal access tokens → Fine-grained tokens, 이 저장소만 Contents: Read 권한).
+서버가 `git pull`할 때 인증용으로만 씁니다.
+
 ```bash
-cd /opt/trip
-sudo -u www-data git pull origin claude/travel-itinerary-3it5fs
-cd server && sudo -u www-data npm install --omit=dev
-sudo systemctl restart trip-was
+cd /opt
+git clone -b claude/travel-itinerary-3it5fs https://<TOKEN>@github.com/Devin-Home/devin-rfp.git trip-new
+
+# 기존 데이터(DB, 업로드 사진, .env) 새 clone으로 복사
+cp /opt/trip/server/.env /opt/trip-new/server/.env
+cp -r /opt/trip/server/data /opt/trip-new/server/
+cp -r /opt/trip/server/uploads /opt/trip-new/server/
+
+cd /opt/trip-new/server
+npm install --omit=dev
+
+systemctl stop trip-was
+mv /opt/trip /opt/trip-backup-$(date +%F)
+mv /opt/trip-new /opt/trip
+chown -R www-data:www-data /opt/trip
+systemctl start trip-was
+systemctl status trip-was
 ```
 
-자동으로 반영하고 싶다면 이전에 안내드린 cron 방식이나 GitHub Actions 배포 방식을 그대로 적용하시되,
-마지막 단계에 `npm install`과 `systemctl restart trip-was`를 추가하시면 됩니다.
+`active (running)`이고 브라우저에서 정상 접속되면 `/opt/trip-backup-*`는 며칠 뒤 지워도 됩니다.
+
+### 9-2. 배포 스크립트 설치
+
+저장소 루트의 `deploy.sh`를 서버의 `/opt/trip/deploy.sh`로 복사합니다 (이미 `/opt/trip`이 git 저장소이므로
+`git pull` 한 번이면 자동으로 최신 `deploy.sh`가 그 자리에 있습니다. 최초 1회만 권한 설정):
+
+```bash
+chmod 700 /opt/trip/deploy.sh
+chown root:root /opt/trip/deploy.sh
+```
+
+### 9-3. GitHub Actions가 비밀번호 없이 이 스크립트를 실행할 수 있게 sudo 권한 부여
+
+```bash
+echo 'azureadmin ALL=(root) NOPASSWD: /opt/trip/deploy.sh' | sudo tee /etc/sudoers.d/trip-deploy
+sudo visudo -c   # 문법 검증, "parsed OK" 나오면 정상
+```
+
+### 9-4. GitHub Actions가 서버에 SSH로 접속할 키 생성
+
+**로컬 노트북 터미널**에서 (서버 접속용 키와는 별개로 새로 만드는 걸 권장):
+```bash
+ssh-keygen -t ed25519 -f deploy_key -N ""
+```
+`deploy_key.pub` 내용을 서버의 `azureadmin` 계정에 등록:
+```bash
+cat deploy_key.pub | ssh azureadmin@52.141.56.131 "cat >> ~/.ssh/authorized_keys"
+```
+
+### 9-5. GitHub 저장소에 시크릿 등록
+
+GitHub → `Devin-Home/devin-rfp` 저장소 → **Settings → Secrets and variables → Actions → New repository secret**
+3개를 등록합니다.
+
+| 이름 | 값 |
+|---|---|
+| `SSH_HOST` | `52.141.56.131` |
+| `SSH_USER` | `azureadmin` |
+| `SSH_PRIVATE_KEY` | `deploy_key` 파일 내용 전체 (`-----BEGIN OPENSSH PRIVATE KEY-----`부터 끝까지) |
+
+### 9-6. 완료 — 이제 push하면 자동 배포됩니다
+
+`server/` 폴더 안의 파일이 바뀐 채로 `claude/travel-itinerary-3it5fs` 브랜치에 push되면
+`.github/workflows/deploy.yml`이 자동으로 실행되어 서버에서 `sudo /opt/trip/deploy.sh`를 실행합니다
+(git pull → npm install → 권한 복구 → 서비스 재시작). GitHub 저장소의 **Actions** 탭에서 실행 로그를
+확인할 수 있습니다.
+
+### 수동으로 한 번만 반영하고 싶을 때
+
+```bash
+sudo /opt/trip/deploy.sh
+```
+
+### 더 간단한 대안: cron으로 주기적 반영 (Actions 설정이 부담스러우면)
+
+Actions/SSH 키 설정 없이, 서버가 스스로 몇 분마다 확인하게 할 수도 있습니다 (완전 실시간은 아니고 지연 있음):
+```bash
+sudo crontab -e
+```
+```
+*/5 * * * * /opt/trip/deploy.sh >> /var/log/trip-deploy.log 2>&1
+```
 
 ## 데이터 백업
 

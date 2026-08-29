@@ -1,0 +1,20 @@
+name: Deploy trip WAS
+
+on:
+  push:
+    branches: [claude/travel-itinerary-3it5fs]
+    paths:
+      - 'server/**'
+      - '.github/workflows/deploy.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH into server and run deploy.sh
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: sudo /opt/trip/deploy.sh
