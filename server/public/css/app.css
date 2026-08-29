@@ -139,7 +139,7 @@ input, select, textarea { font: inherit; color: inherit; }
 .view-head h2 { font-size: 22px; font-weight: 600; }
 .view-head .sub { color: var(--ink-faint); font-size: 13px; font-family: 'IBM Plex Mono', monospace; }
 .fx-block { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.fx-control { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-soft); }
+.fx-control { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-soft); white-space: nowrap; flex-shrink: 0; }
 .fx-input { width: 70px; padding: 5px 8px; text-align: right; }
 .fx-updated { font-size: 11px; color: var(--ink-faint); font-family: 'IBM Plex Mono', monospace; }
 
