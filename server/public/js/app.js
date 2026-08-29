@@ -7,6 +7,7 @@ let editingEvent = null; // event id currently showing its edit form
 let addingEventFor = null; // day id currently showing "new event" form
 let addingExpenseFor = null; // event id currently showing "add expense" form
 let addingMemoFor = null; // event id currently showing "add/edit memo" form
+let editingExpenseId = null; // expense id currently showing its inline edit form (on an event row)
 
 let collapsedDays = new Set();
 try { collapsedDays = new Set(JSON.parse(localStorage.getItem('collapsedDays') || '[]')); } catch (e) {}
@@ -89,6 +90,46 @@ function findEventById(id) {
   return null;
 }
 
+function expenseItemAmountHTML(e) {
+  return e.currency === 'krw'
+    ? `₩${Number(e.amount_krw ?? Math.round(e.amount_thb * exchangeRate())).toLocaleString('ko-KR')}`
+    : `฿${Number(e.amount_thb).toLocaleString('ko-KR')}`;
+}
+
+function eventExpenseEditFormHTML(e) {
+  const isKrw = e.currency === 'krw';
+  const amountVal = isKrw ? (e.amount_krw ?? '') : e.amount_thb;
+  return `
+    <form class="inline-form expense-inline-form" data-act="save-event-expense-edit" data-id="${e.id}">
+      <div class="form-grid">
+        <div class="form-row"><label class="form-label">날짜</label><input class="form-input" type="date" name="date" value="${esc(e.date)}" required></div>
+        <div class="form-row"><label class="form-label">분류</label>
+          <select class="form-input" name="category">
+            ${EXPENSE_CATEGORIES.map((c) => `<option ${c === e.category ? 'selected' : ''}>${c}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-row"><label class="form-label">결제수단</label>
+          <select class="form-input" name="payment_method">
+            <option ${e.payment_method === '카드' ? 'selected' : ''}>카드</option><option ${e.payment_method === '현금' ? 'selected' : ''}>현금</option>
+          </select>
+        </div>
+        <div class="form-row"><label class="form-label">통화</label>
+          <select class="form-input" name="currency">
+            <option value="thb" ${!isKrw ? 'selected' : ''}>🇹🇭 바트</option>
+            <option value="krw" ${isKrw ? 'selected' : ''}>🇰🇷 원화</option>
+          </select>
+        </div>
+        <div class="form-row"><label class="form-label">금액</label><input class="form-input" type="number" step="${isKrw ? '1' : '0.01'}" inputmode="${isKrw ? 'numeric' : 'decimal'}" name="amount_input" value="${amountVal}" required></div>
+        <div class="form-row"><label class="form-label">결제자</label><input class="form-input" name="payer" value="${esc(e.payer || '')}" placeholder="예: A가족"></div>
+        <div class="form-row" style="grid-column: 1 / -1;"><label class="form-label">내용</label><input class="form-input" name="description" value="${esc(e.description || '')}"></div>
+      </div>
+      <div class="btn-bar">
+        <button class="btn" type="button" data-act="cancel-expense-edit">취소</button>
+        <button class="btn btn-primary" type="submit">비용 저장</button>
+      </div>
+    </form>`;
+}
+
 function eventExpensesHTML(ev) {
   const linked = expenses.filter((e) => e.event_id === ev.id);
   if (!linked.length) return '';
@@ -96,13 +137,14 @@ function eventExpensesHTML(ev) {
   return `
     <div class="event-expenses">
       <div class="event-expenses-total">💰 지출 합계 ฿${total.toLocaleString('ko-KR')} · ${krw(total)}원</div>
-      ${linked.map((e) => `
+      ${linked.map((e) => (editingExpenseId === e.id ? eventExpenseEditFormHTML(e) : `
         <div class="event-expense-item">
           <span class="pm-pill">${esc(e.payment_method || '카드')}</span>
           <span class="desc">${esc(e.description || e.category)}</span>
-          <span class="amount mono">${e.currency === 'krw' ? `₩${Number(e.amount_krw ?? Math.round(e.amount_thb * exchangeRate())).toLocaleString('ko-KR')}` : `฿${Number(e.amount_thb).toLocaleString('ko-KR')}`}</span>
+          <span class="amount mono">${expenseItemAmountHTML(e)}</span>
+          <button class="icon-btn sm" data-act="edit-expense-from-event" data-id="${e.id}" title="수정">✏️</button>
           <button class="icon-btn danger sm" data-act="del-expense-from-event" data-id="${e.id}" title="삭제">🗑</button>
-        </div>`).join('')}
+        </div>`)).join('')}
     </div>`;
 }
 
@@ -383,6 +425,8 @@ document.getElementById('daysContainer').addEventListener('click', async (e) => 
   } else if (act === 'add-event') { addingEventFor = id; editingEvent = null; renderDays(); }
   else if (act === 'add-event-expense') { addingExpenseFor = id; renderDays(); }
   else if (act === 'cancel-event-expense') { addingExpenseFor = null; renderDays(); }
+  else if (act === 'edit-expense-from-event') { editingExpenseId = id; renderDays(); }
+  else if (act === 'cancel-expense-edit') { editingExpenseId = null; renderDays(); }
   else if (act === 'add-event-memo' || act === 'edit-event-memo') { addingMemoFor = id; renderDays(); }
   else if (act === 'cancel-event-memo') { addingMemoFor = null; renderDays(); }
   else if (act === 'del-expense-from-event') {
@@ -437,6 +481,10 @@ document.getElementById('daysContainer').addEventListener('submit', async (e) =>
       event_id: form.dataset.eventId,
     });
     addingExpenseFor = null;
+    await loadExpenses();
+  } else if (act === 'save-event-expense-edit') {
+    await api.put(`/api/expenses/${form.dataset.id}`, applyExpenseAmounts(fd));
+    editingExpenseId = null;
     await loadExpenses();
   }
 });
