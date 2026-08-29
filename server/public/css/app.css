@@ -51,6 +51,7 @@ body {
   background-size: 22px 22px;
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
 }
 a { color: var(--teal-strong); }
 .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
@@ -160,7 +161,12 @@ input, select, textarea { font: inherit; color: inherit; }
 .form-input {
   width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm);
   background: var(--surface); color: var(--ink); transition: border-color .15s ease, box-shadow .15s ease;
+  font-size: 14px; line-height: 1.4; font-family: inherit;
 }
+/* iOS Safari doesn't reliably pick up font-size on type="date" via inherited
+   `font: inherit` alone, and renders its native value text oversized unless
+   the size is set explicitly on the element itself. */
+input[type="date"].form-input { font-size: 14px; }
 .form-input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px var(--teal-soft); outline: none; }
 .form-row { display: flex; flex-direction: column; gap: 5px; }
 .form-label { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-faint); }
