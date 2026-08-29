@@ -5,6 +5,7 @@ let editingDay = null;   // day id currently showing its edit form
 let editingHotel = null; // day id currently showing hotel edit form
 let editingEvent = null; // event id currently showing its edit form
 let addingEventFor = null; // day id currently showing "new event" form
+let addingExpenseFor = null; // event id currently showing "add expense" form
 
 let collapsedDays = new Set();
 try { collapsedDays = new Set(JSON.parse(localStorage.getItem('collapsedDays') || '[]')); } catch (e) {}
@@ -14,6 +15,8 @@ function persistCollapsed() {
 
 const CITY_LABEL = { bkk: '방콕', pty: '파타야' };
 const TYPE_LABEL = { activity: '활동', meal: '식사', flight: '항공' };
+const TYPE_CATEGORY = { meal: '식비', flight: '교통', activity: '액티비티' };
+const EXPENSE_CATEGORIES = ['숙소', '교통', '식비', '액티비티', '쇼핑', '마사지', '기타'];
 const ICONS = ['plane', 'temple', 'pawprint', 'van', 'anchor', 'droplet', 'sun', 'bag', 'suitcase'];
 const ICON_LABEL = {
   plane: '✈️ 비행기', temple: '🛕 사원', pawprint: '🐾 액티비티', van: '🚐 이동',
@@ -77,6 +80,59 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
 
 /* ---------------- Itinerary ---------------- */
 
+function findEventById(id) {
+  for (const d of days) {
+    const ev = (d.events || []).find((e) => e.id === Number(id));
+    if (ev) return { day: d, event: ev };
+  }
+  return null;
+}
+
+function eventExpensesHTML(ev) {
+  const linked = expenses.filter((e) => e.event_id === ev.id);
+  if (!linked.length) return '';
+  const total = linked.reduce((s, e) => s + e.amount_thb, 0);
+  return `
+    <div class="event-expenses">
+      <div class="event-expenses-total">💰 지출 합계 ฿${total.toLocaleString('ko-KR')} · ${krw(total)}원</div>
+      ${linked.map((e) => `
+        <div class="event-expense-item">
+          <span class="pm-pill">${esc(e.payment_method || '카드')}</span>
+          <span class="desc">${esc(e.description || e.category)}</span>
+          <span class="amount mono">฿${Number(e.amount_thb).toLocaleString('ko-KR')}</span>
+          <button class="icon-btn danger sm" data-act="del-expense-from-event" data-id="${e.id}" title="삭제">🗑</button>
+        </div>`).join('')}
+    </div>`;
+}
+
+function eventExpenseFormHTML(day, ev) {
+  const today = new Date().toISOString().slice(0, 10);
+  const defaultCat = TYPE_CATEGORY[ev.type] || '기타';
+  return `
+    <form class="inline-form expense-inline-form" data-act="save-event-expense" data-day-id="${day.id}" data-event-id="${ev.id}">
+      <div class="form-grid">
+        <div class="form-row"><label class="form-label">날짜</label><input class="form-input" type="date" name="date" value="${today}" required></div>
+        <div class="form-row"><label class="form-label">분류</label>
+          <select class="form-input" name="category">
+            ${EXPENSE_CATEGORIES.map((c) => `<option ${c === defaultCat ? 'selected' : ''}>${c}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-row"><label class="form-label">결제수단</label>
+          <select class="form-input" name="payment_method">
+            <option>카드</option><option>현금</option>
+          </select>
+        </div>
+        <div class="form-row"><label class="form-label">금액(밧)</label><input class="form-input" type="number" step="0.01" name="amount_thb" required></div>
+        <div class="form-row"><label class="form-label">결제자</label><input class="form-input" name="payer" placeholder="예: A가족"></div>
+        <div class="form-row" style="grid-column: 1 / -1;"><label class="form-label">내용</label><input class="form-input" name="description" value="${esc(ev.name)}"></div>
+      </div>
+      <div class="btn-bar">
+        <button class="btn" type="button" data-act="cancel-event-expense">취소</button>
+        <button class="btn btn-primary" type="submit">지출 저장</button>
+      </div>
+    </form>`;
+}
+
 function eventRowHTML(day, ev) {
   if (editingEvent === ev.id) return eventFormHTML(day.id, ev);
   return `
@@ -85,7 +141,10 @@ function eventRowHTML(day, ev) {
       <div class="body">
         <div class="name">${esc(ev.name)}</div>
         ${ev.desc ? `<div class="desc">${esc(ev.desc)}</div>` : ''}
+        ${ev.memo ? `<div class="memo">📝 ${esc(ev.memo)}</div>` : ''}
         ${ev.map_query ? `<a class="maplink" href="${mapLink(ev.map_query)}" target="_blank" rel="noopener">📍 지도</a>` : ''}
+        ${eventExpensesHTML(ev)}
+        ${addingExpenseFor === ev.id ? eventExpenseFormHTML(day, ev) : `<button class="btn btn-xs" data-act="add-event-expense" data-id="${ev.id}">💵 지출 추가</button>`}
       </div>
       <div class="row-actions">
         <button class="icon-btn" data-act="edit-event" data-id="${ev.id}" title="수정">✏️</button>
@@ -95,7 +154,7 @@ function eventRowHTML(day, ev) {
 }
 
 function eventFormHTML(dayId, ev) {
-  const e = ev || { id: null, time: '', type: 'activity', name: '', desc: '', map_query: '' };
+  const e = ev || { id: null, time: '', type: 'activity', name: '', desc: '', map_query: '', memo: '' };
   return `
     <form class="inline-form" data-act="save-event" data-day-id="${dayId}" data-id="${e.id || ''}">
       <div class="form-grid">
@@ -109,6 +168,7 @@ function eventFormHTML(dayId, ev) {
         </div>
         <div class="form-row" style="grid-column: span 2;"><label class="form-label">이름</label><input class="form-input" name="name" value="${esc(e.name)}" required></div>
         <div class="form-row" style="grid-column: 1 / -1;"><label class="form-label">설명</label><input class="form-input" name="desc" value="${esc(e.desc)}"></div>
+        <div class="form-row" style="grid-column: 1 / -1;"><label class="form-label">메모</label><input class="form-input" name="memo" value="${esc(e.memo || '')}" placeholder="예: 예약 확인번호, 준비물 등"></div>
         <div class="form-row" style="grid-column: 1 / -1;"><label class="form-label">지도 검색어 (선택)</label><input class="form-input" name="map_query" value="${esc(e.map_query || '')}" placeholder="예: Wat Arun Bangkok"></div>
       </div>
       <div class="btn-bar">
@@ -281,6 +341,14 @@ document.getElementById('daysContainer').addEventListener('click', async (e) => 
       renderDays();
     }
   } else if (act === 'add-event') { addingEventFor = id; editingEvent = null; renderDays(); }
+  else if (act === 'add-event-expense') { addingExpenseFor = id; renderDays(); }
+  else if (act === 'cancel-event-expense') { addingExpenseFor = null; renderDays(); }
+  else if (act === 'del-expense-from-event') {
+    if (confirm('이 지출 내역을 삭제할까요?')) {
+      await api.del(`/api/expenses/${id}`);
+      await loadExpenses();
+    }
+  }
 });
 
 document.getElementById('daysContainer').addEventListener('submit', async (e) => {
@@ -313,6 +381,14 @@ document.getElementById('daysContainer').addEventListener('submit', async (e) =>
     editingEvent = null;
     addingEventFor = null;
     renderDays();
+  } else if (act === 'save-event-expense') {
+    await api.post('/api/expenses', {
+      ...fd,
+      day_id: form.dataset.dayId,
+      event_id: form.dataset.eventId,
+    });
+    addingExpenseFor = null;
+    await loadExpenses();
   }
 });
 
@@ -379,6 +455,7 @@ async function loadExpenses() {
   expenses = await api.get('/api/expenses');
   renderExpenses();
   renderSummary();
+  if (days.length) renderDays(); // refresh linked-expense info shown on event rows
 }
 
 function renderSummary() {
@@ -399,11 +476,23 @@ function renderSummary() {
   strip.innerHTML = cards.join('');
 }
 
+function expenseLinkTag(e) {
+  if (e.event_id) {
+    const found = findEventById(e.event_id);
+    if (found) return `<span class="link-pill">Day ${found.day.day_number} · ${esc(found.event.name)}</span>`;
+  }
+  if (e.day_id) {
+    const d = days.find((dd) => dd.id === e.day_id);
+    if (d) return `<span class="link-pill">Day ${d.day_number}</span>`;
+  }
+  return '<span class="ink-faint">-</span>';
+}
+
 function renderExpenses() {
   const tbody = document.getElementById('expenseRows');
   const list = filteredExpenses();
   if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="8" class="empty-hint">해당하는 지출 내역이 없습니다.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="empty-hint">해당하는 지출 내역이 없습니다.</td></tr>';
     return;
   }
   tbody.innerHTML = list.map((e) => `
@@ -412,6 +501,7 @@ function renderExpenses() {
       <td data-label="분류"><span class="cat-pill">${esc(e.category)}</span></td>
       <td data-label="결제수단"><span class="pm-pill">${esc(e.payment_method || '카드')}</span></td>
       <td data-label="내용">${esc(e.description)}</td>
+      <td data-label="연결">${expenseLinkTag(e)}</td>
       <td data-label="결제자">${esc(e.payer)}</td>
       <td data-label="메모">${esc(e.memo || '')}</td>
       <td class="amount" data-label="금액"><span class="amount-krw">${krw(e.amount_thb)}원</span><span class="amount-thb">฿${Number(e.amount_thb).toLocaleString('ko-KR')}</span></td>

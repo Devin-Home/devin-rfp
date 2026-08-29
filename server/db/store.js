@@ -86,8 +86,12 @@ function updateDay(id, fields) {
 function deleteDay(id) {
   const idx = state.days.findIndex((d) => d.id === Number(id));
   if (idx === -1) return false;
+  const eventIds = new Set(state.days[idx].events.map((e) => e.id));
   state.days.splice(idx, 1);
-  state.expenses.forEach((e) => { if (e.day_id === Number(id)) e.day_id = null; });
+  state.expenses.forEach((e) => {
+    if (e.day_id === Number(id)) e.day_id = null;
+    if (eventIds.has(e.event_id)) e.event_id = null;
+  });
   state.images.forEach((i) => { if (i.day_id === Number(id)) i.day_id = null; });
   persist();
   return true;
@@ -111,6 +115,7 @@ function createEvent(dayId, fields) {
     map_query: fields.map_query || null,
     link_url: fields.link_url || null,
     link_label: fields.link_label || null,
+    memo: fields.memo || null,
     sort_order: maxOrder + 1,
   };
   day.events.push(event);
@@ -126,7 +131,7 @@ function updateEvent(eventId, fields) {
   const day = findEventDay(eventId);
   if (!day) return null;
   const event = day.events.find((e) => e.id === Number(eventId));
-  const editable = ['time', 'type', 'name', 'desc', 'map_query', 'link_url', 'link_label'];
+  const editable = ['time', 'type', 'name', 'desc', 'map_query', 'link_url', 'link_label', 'memo'];
   editable.forEach((k) => {
     if (fields[k] !== undefined) event[k] = fields[k];
   });
@@ -138,6 +143,7 @@ function deleteEvent(eventId) {
   const day = findEventDay(eventId);
   if (!day) return null;
   day.events = day.events.filter((e) => e.id !== Number(eventId));
+  state.expenses.forEach((e) => { if (e.event_id === Number(eventId)) e.event_id = null; });
   persist();
   return sortEvents(day);
 }
@@ -166,7 +172,8 @@ function createExpense(fields) {
   const expense = {
     id: nextId('expenses'),
     date: fields.date || new Date().toISOString().slice(0, 10),
-    day_id: fields.day_id || null,
+    day_id: fields.day_id ? Number(fields.day_id) : null,
+    event_id: fields.event_id ? Number(fields.event_id) : null,
     category: fields.category || '기타',
     payment_method: fields.payment_method || '카드',
     description: fields.description || '',
@@ -184,10 +191,12 @@ function createExpense(fields) {
 function updateExpense(id, fields) {
   const expense = state.expenses.find((e) => e.id === Number(id));
   if (!expense) return null;
-  const editable = ['date', 'day_id', 'category', 'payment_method', 'description', 'payer', 'memo', 'receipt_image'];
+  const editable = ['date', 'category', 'payment_method', 'description', 'payer', 'memo', 'receipt_image'];
   editable.forEach((k) => {
     if (fields[k] !== undefined) expense[k] = fields[k];
   });
+  if (fields.day_id !== undefined) expense.day_id = fields.day_id ? Number(fields.day_id) : null;
+  if (fields.event_id !== undefined) expense.event_id = fields.event_id ? Number(fields.event_id) : null;
   if (fields.amount_thb !== undefined) expense.amount_thb = Number(fields.amount_thb);
   persist();
   return expense;
@@ -256,6 +265,7 @@ function seedIfEmpty(seedDays) {
         map_query: e.map_query || null,
         link_url: e.link_url || null,
         link_label: e.link_label || null,
+        memo: e.memo || null,
         sort_order: j,
       })),
     };
