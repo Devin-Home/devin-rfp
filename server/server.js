@@ -11,6 +11,7 @@ const daysRoutes = require('./routes/days');
 const expensesRoutes = require('./routes/expenses');
 const uploadsRoutes = require('./routes/uploads');
 const fxRoutes = require('./routes/fx');
+const weatherRoutes = require('./routes/weather');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -34,6 +35,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/days', requireAuth, daysRoutes);
 app.use('/api/expenses', requireAuth, expensesRoutes);
 app.use('/api/fx', requireAuth, fxRoutes);
+app.use('/api/weather', requireAuth, weatherRoutes);
 app.use('/api', requireAuth, uploadsRoutes);
 app.use('/uploads', requireAuth, express.static(path.join(__dirname, 'uploads')));
 

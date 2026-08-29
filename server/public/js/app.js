@@ -80,6 +80,28 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   window.location.href = '/login.html';
 });
 
+/* ---------------- Weather ---------------- */
+
+async function loadWeather() {
+  const el = document.getElementById('weatherStrip');
+  if (!el) return;
+  try {
+    const data = await api.get('/api/weather');
+    const cities = (data && data.cities) || [];
+    el.innerHTML = cities
+      .map((c) => `
+        <span class="weather-item">
+          <span class="ic">${c.icon}</span>
+          <span class="city">${esc(c.label)}</span>
+          <span class="temp">${c.temp != null ? `${c.temp}°C` : '-'}</span>
+          <span class="cond">${esc(c.condition)}</span>
+        </span>`)
+      .join('<span class="weather-sep">·</span>');
+  } catch (e) {
+    el.innerHTML = ''; // fail silently — the strip just collapses (see .weather-strip:empty)
+  }
+}
+
 /* ---------------- Itinerary ---------------- */
 
 function findEventById(id) {
@@ -782,7 +804,7 @@ lightbox.addEventListener('click', () => lightbox.classList.remove('open'));
   try {
     document.getElementById('expenseForm').date.value = new Date().toISOString().slice(0, 10);
     await loadDays(); // gallery grouping needs `days` populated first
-    await Promise.all([loadExpenses(), loadImages()]);
+    await Promise.all([loadExpenses(), loadImages(), loadWeather()]);
     if (!localStorage.getItem('krwPerThb')) fetchTodayFx(false); // first-ever visit: seed a real rate instead of the 41 fallback
   } catch (err) {
     console.error('init failed:', err);
