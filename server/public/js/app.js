@@ -1,22 +1,22 @@
 let days = [];
 let expenses = [];
 let images = [];
-let editingDay = null;   // day id currently showing its edit form
-let editingHotel = null; // day id currently showing hotel edit form
-let editingEvent = null; // event id currently showing its edit form
-let addingEventFor = null; // day id currently showing "new event" form
-let addingExpenseFor = null; // event id currently showing "add expense" form
-let addingMemoFor = null; // event id currently showing "add/edit memo" form
-let editingExpenseId = null; // expense id currently showing its inline edit form (on an event row)
 
-let collapsedDays = new Set();
-try { collapsedDays = new Set(JSON.parse(localStorage.getItem('collapsedDays') || '[]')); } catch (e) {}
-function persistCollapsed() {
-  try { localStorage.setItem('collapsedDays', JSON.stringify([...collapsedDays])); } catch (e) {}
-}
+let selectedDayId = null;   // day id currently shown in the itinerary panel
+let editingDayId = null;    // day id currently showing its combined day/hotel edit form
+let editingEvent = null;    // event id currently showing its edit form
+let addingEventFor = null;  // day id currently showing "new event" form
+let addingExpenseFor = null;   // event id currently showing "add expense" form
+let addingMemoFor = null;      // event id currently showing "add/edit memo" form
+let editingExpenseId = null;   // expense id currently showing its inline edit form (on an event row)
+let editingTopExpenseId = null; // expense id currently being edited from the main expense form/table
 
+let paymentFilter = 'all'; // 'all' | '카드' | '현금'
+let breakdownOpen = true;
+
+const WEEKDAY = ['일', '월', '화', '수', '목', '금', '토'];
 const CITY_LABEL = { bkk: '방콕', pty: '파타야' };
-const TYPE_LABEL = { activity: '활동', meal: '식사', flight: '항공' };
+const TYPE_LABEL = { flight: '항공', activity: '일정', meal: '식사' };
 const TYPE_CATEGORY = { meal: '식비', flight: '교통', activity: '액티비티' };
 const EXPENSE_CATEGORIES = ['숙소', '교통', '식비', '액티비티', '쇼핑', '마사지', '기타'];
 const ICONS = ['plane', 'temple', 'pawprint', 'van', 'anchor', 'droplet', 'sun', 'bag', 'suitcase'];
@@ -24,6 +24,14 @@ const ICON_LABEL = {
   plane: '✈️ 비행기', temple: '🛕 사원', pawprint: '🐾 액티비티', van: '🚐 이동',
   anchor: '⚓ 바다/투어', droplet: '💧 물놀이', sun: '☀️ 휴식', bag: '👜 쇼핑', suitcase: '🧳 여행',
 };
+const SPOTS = [
+  { day: 2, city: '방콕', name: '왕궁 & 왓프라깨우', note: '올드타운의 시작. 복장 규정을 지켜야 입장할 수 있습니다.', map: 'Grand Palace Bangkok', tint: 'bl-200' },
+  { day: 2, city: '방콕', name: '왓아룬', note: '타티엔 선착장에서 크로스보트로 강을 건너 도착.', map: 'Wat Arun Bangkok', tint: 'bl-100' },
+  { day: 3, city: '방콕', name: '조드페어스 야시장', note: '목요일부터 일요일까지 열리는 라마9의 야시장.', map: 'Jodd Fairs Rama 9 Bangkok', tint: 'sand' },
+  { day: 5, city: '파타야', name: '꼬란섬 코랄 비치', note: '발라하이 선착장에서 출발하는 반일 투어.', map: 'Koh Larn Coral Island Pattaya', tint: 'bl-300' },
+  { day: 5, city: '파타야', name: '진리의 성전', note: '못 하나 쓰지 않고 짓는 목조 성전. 오후 관람.', map: 'Sanctuary of Truth Pattaya', tint: 'bl-100' },
+  { day: 8, city: '방콕', name: '아이콘시암', note: '쑥시암 푸드코트와 팁싸마이 팟타이가 있는 강변 몰.', map: 'ICONSIAM Bangkok', tint: 'bl-200' },
+];
 
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -31,47 +39,55 @@ function esc(s) {
 function mapLink(q) {
   return q ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}` : '';
 }
-function fmtDate(d) {
-  if (!d) return '';
-  const dt = new Date(d + 'T00:00:00');
-  if (Number.isNaN(dt.getTime())) return d;
-  const days = ['일', '월', '화', '수', '목', '금', '토'];
-  return `${d} (${days[dt.getDay()]})`;
+function bahtStr(n) { return '฿' + Math.round(n).toLocaleString('en-US'); }
+function fmtDateShort(date) {
+  if (!date) return '날짜 미정';
+  const dt = new Date(`${date}T00:00:00`);
+  if (Number.isNaN(dt.getTime())) return '날짜 미정';
+  return `${date.slice(5).replace('-', '.')} ${WEEKDAY[dt.getDay()]}`;
+}
+function fmtDayEyebrow(day) {
+  if (!day.date) return '날짜 미정';
+  const dt = new Date(`${day.date}T00:00:00`);
+  if (Number.isNaN(dt.getTime())) return '날짜 미정';
+  return `${day.date.slice(5).replace('-', '월 ')}일 (${WEEKDAY[dt.getDay()]}) · ${CITY_LABEL[day.city] || day.city}`;
+}
+
+/* ---------------- Toast ---------------- */
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  clearTimeout(toastTimer);
+  el.textContent = msg;
+  el.classList.add('show');
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
 }
 
 /* ---------------- Tabs ---------------- */
-const tabPill = document.getElementById('tabPill');
-function moveTabPill(btn) {
-  if (!tabPill || !btn) return;
-  tabPill.style.left = `${btn.offsetLeft}px`;
-  tabPill.style.width = `${btn.offsetWidth}px`;
-}
 document.querySelectorAll('.tab').forEach((btn) => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach((b) => b.classList.remove('active'));
     document.querySelectorAll('.view').forEach((v) => v.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById(`view-${btn.dataset.view}`).classList.add('active');
-    moveTabPill(btn);
   });
 });
-window.addEventListener('load', () => moveTabPill(document.querySelector('.tab.active')));
-window.addEventListener('resize', () => moveTabPill(document.querySelector('.tab.active')));
 
 /* ---------------- Theme toggle ---------------- */
 const themeToggle = document.getElementById('themeToggle');
-function applyThemeIcon() {
+function applyThemeLabel() {
   const isDark = document.documentElement.dataset.theme === 'dark';
-  themeToggle.textContent = isDark ? '🌙' : '☀️';
+  themeToggle.textContent = isDark ? '밝게' : '어둡게';
   themeToggle.title = isDark ? '밝은 화면으로 전환' : '어두운 화면으로 전환';
 }
 if (themeToggle) {
-  applyThemeIcon();
+  applyThemeLabel();
   themeToggle.addEventListener('click', () => {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;
     try { localStorage.setItem('theme', next); } catch (e) {}
-    applyThemeIcon();
+    applyThemeLabel();
   });
 }
 
@@ -81,39 +97,51 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
 });
 
 /* ---------------- Thailand clock ---------------- */
-
 function updateThailandClock() {
   const el = document.getElementById('thClock');
   if (!el) return;
   const now = new Date();
   const time = new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit', hour12: false }).format(now);
-  const weekday = new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Bangkok', weekday: 'short' }).format(now);
-  el.innerHTML = `<span class="ic">🕐</span> <span class="city">태국 현지시간</span> <span class="clock-time">${time}</span> <span class="cond">(${weekday})</span>`;
+  el.innerHTML = `태국 현지 <span class="clock-time">${time}</span>`;
 }
 updateThailandClock();
 setInterval(updateThailandClock, 30000);
 
 /* ---------------- Weather ---------------- */
-
 async function loadWeather() {
   const el = document.getElementById('weatherItems');
   if (!el) return;
   try {
     const data = await api.get('/api/weather');
     const cities = (data && data.cities) || [];
-    if (!cities.length) { el.innerHTML = ''; return; }
-    el.innerHTML = '<span class="weather-sep">·</span>' + cities
-      .map((c) => `
-        <span class="weather-item">
-          <span class="ic">${c.icon}</span>
-          <span class="city">${esc(c.label)}</span>
-          <span class="temp">${c.temp != null ? `${c.temp}°C` : '-'}</span>
-          <span class="cond">${esc(c.condition)}</span>
-        </span>`)
-      .join('<span class="weather-sep">·</span>');
+    el.innerHTML = cities.map((c) => `<span class="weather-item">${c.icon} ${esc(c.label)} ${c.temp != null ? `${c.temp}°` : '-'} ${esc(c.condition)}</span>`).join('');
   } catch (e) {
     el.innerHTML = ''; // fail silently — just the clock keeps showing
   }
+}
+
+/* ---------------- D-day ---------------- */
+function updateDday() {
+  const el = document.getElementById('ddayNum');
+  if (!el) return;
+  const first = days.length ? days.slice().sort((a, b) => a.sort_order - b.sort_order)[0] : null;
+  if (!first || !first.date) { el.textContent = ''; return; }
+  const start = new Date(`${first.date}T00:00:00+07:00`);
+  const diff = Math.ceil((start - new Date()) / 86400000);
+  el.textContent = diff > 0 ? `D-${diff}` : diff === 0 ? 'D-DAY' : `D+${-diff}`;
+}
+
+/* ---------------- Spots (static, curated from the itinerary) ---------------- */
+function renderSpots() {
+  const grid = document.getElementById('spotsGrid');
+  if (!grid) return;
+  grid.innerHTML = SPOTS.map((p) => `
+    <a class="spot-card" data-tint="${p.tint}" href="${mapLink(p.map)}" target="_blank" rel="noopener">
+      <span class="spot-icon"><svg><use href="#i-temple"></use></svg></span>
+      <span class="spot-eyebrow">Day ${p.day} · ${esc(p.city)}</span>
+      <span class="spot-name">${esc(p.name)}</span>
+      <span class="spot-note">${esc(p.note)}</span>
+    </a>`).join('');
 }
 
 /* ---------------- Itinerary ---------------- */
@@ -136,7 +164,7 @@ function eventExpenseEditFormHTML(e) {
   const isKrw = e.currency === 'krw';
   const amountVal = isKrw ? (e.amount_krw ?? '') : e.amount_thb;
   return `
-    <form class="inline-form expense-inline-form" data-act="save-event-expense-edit" data-id="${e.id}">
+    <form class="inline-form" data-act="save-event-expense-edit" data-id="${e.id}">
       <div class="form-grid">
         <div class="form-row"><label class="form-label">날짜</label><input class="form-input" type="date" name="date" value="${esc(e.date)}" required></div>
         <div class="form-row"><label class="form-label">분류</label>
@@ -157,10 +185,10 @@ function eventExpenseEditFormHTML(e) {
         </div>
         <div class="form-row"><label class="form-label">금액</label><input class="form-input" type="number" step="${isKrw ? '1' : '0.01'}" inputmode="${isKrw ? 'numeric' : 'decimal'}" name="amount_input" value="${amountVal}" required></div>
         <div class="form-row"><label class="form-label">결제자</label><input class="form-input" name="payer" value="${esc(e.payer || '')}" placeholder="예: A가족"></div>
-        <div class="form-row" style="grid-column: 1 / -1;"><label class="form-label">내용</label><input class="form-input" name="description" value="${esc(e.description || '')}"></div>
+        <div class="form-row" style="grid-column:1/-1"><label class="form-label">내용</label><input class="form-input" name="description" value="${esc(e.description || '')}"></div>
       </div>
       <div class="btn-bar">
-        <button class="btn" type="button" data-act="cancel-expense-edit">취소</button>
+        <button class="btn btn-ghost" type="button" data-act="cancel-expense-edit">취소</button>
         <button class="btn btn-primary" type="submit">비용 저장</button>
       </div>
     </form>`;
@@ -169,17 +197,15 @@ function eventExpenseEditFormHTML(e) {
 function eventExpensesHTML(ev) {
   const linked = expenses.filter((e) => e.event_id === ev.id);
   if (!linked.length) return '';
-  const total = linked.reduce((s, e) => s + e.amount_thb, 0);
   return `
     <div class="event-expenses">
-      <div class="event-expenses-total">💰 지출 합계 ฿${total.toLocaleString('ko-KR')} · ${krw(total)}원</div>
       ${linked.map((e) => (editingExpenseId === e.id ? eventExpenseEditFormHTML(e) : `
         <div class="event-expense-item">
-          <span class="pm-pill">${esc(e.payment_method || '카드')}</span>
+          <span>${esc(e.payment_method || '카드')}</span>
           <span class="desc">${esc(e.description || e.category)}</span>
           <span class="amount mono">${expenseItemAmountHTML(e)}</span>
-          <button class="icon-btn sm" data-act="edit-expense-from-event" data-id="${e.id}" title="수정">✏️</button>
-          <button class="icon-btn danger sm" data-act="del-expense-from-event" data-id="${e.id}" title="삭제">🗑</button>
+          <button class="icon-btn sm" type="button" data-act="edit-expense-from-event" data-id="${e.id}" title="수정">✏️</button>
+          <button class="icon-btn danger sm" type="button" data-act="del-expense-from-event" data-id="${e.id}" title="삭제">🗑</button>
         </div>`)).join('')}
     </div>`;
 }
@@ -187,20 +213,17 @@ function eventExpensesHTML(ev) {
 function memoBlockHTML(day, ev) {
   if (addingMemoFor === ev.id) return eventMemoFormHTML(day, ev);
   if (ev.memo) {
-    return `<div class="memo"><span>📝 ${esc(ev.memo)}</span><button class="icon-btn sm" data-act="edit-event-memo" data-id="${ev.id}" title="메모 수정">✏️</button></div>`;
+    return `<div class="memo"><span class="lbl">메모</span><span class="txt">${esc(ev.memo)}</span><button class="icon-btn sm" type="button" data-act="edit-event-memo" data-id="${ev.id}" title="메모 수정">✏️</button></div>`;
   }
-  return `<button class="btn btn-xs" data-act="add-event-memo" data-id="${ev.id}">📝 메모 추가</button>`;
+  return `<button class="btn-xs" type="button" data-act="add-event-memo" data-id="${ev.id}">메모 추가</button>`;
 }
 
 function eventMemoFormHTML(day, ev) {
   return `
-    <form class="inline-form memo-inline-form" data-act="save-event-memo" data-day-id="${day.id}" data-id="${ev.id}">
-      <div class="form-row" style="grid-column: 1 / -1;">
-        <label class="form-label">메모</label>
-        <input class="form-input" name="memo" value="${esc(ev.memo || '')}" placeholder="예: 동선 체크, 예약 여부, 특이사항">
-      </div>
+    <form class="inline-form" data-act="save-event-memo" data-day-id="${day.id}" data-id="${ev.id}">
+      <div class="form-row"><label class="form-label">메모</label><input class="form-input" name="memo" value="${esc(ev.memo || '')}" placeholder="예: 동선 체크, 예약 여부, 특이사항"></div>
       <div class="btn-bar">
-        <button class="btn" type="button" data-act="cancel-event-memo">취소</button>
+        <button class="btn btn-ghost" type="button" data-act="cancel-event-memo">취소</button>
         <button class="btn btn-primary" type="submit">메모 저장</button>
       </div>
     </form>`;
@@ -210,7 +233,7 @@ function eventExpenseFormHTML(day, ev) {
   const today = new Date().toISOString().slice(0, 10);
   const defaultCat = TYPE_CATEGORY[ev.type] || '기타';
   return `
-    <form class="inline-form expense-inline-form" data-act="save-event-expense" data-day-id="${day.id}" data-event-id="${ev.id}">
+    <form class="inline-form" data-act="save-event-expense" data-day-id="${day.id}" data-event-id="${ev.id}">
       <div class="form-grid">
         <div class="form-row"><label class="form-label">날짜</label><input class="form-input" type="date" name="date" value="${today}" required></div>
         <div class="form-row"><label class="form-label">분류</label>
@@ -219,22 +242,17 @@ function eventExpenseFormHTML(day, ev) {
           </select>
         </div>
         <div class="form-row"><label class="form-label">결제수단</label>
-          <select class="form-input" name="payment_method">
-            <option>카드</option><option>현금</option>
-          </select>
+          <select class="form-input" name="payment_method"><option>카드</option><option>현금</option></select>
         </div>
         <div class="form-row"><label class="form-label">통화</label>
-          <select class="form-input" name="currency">
-            <option value="thb" selected>🇹🇭 바트</option>
-            <option value="krw">🇰🇷 원화</option>
-          </select>
+          <select class="form-input" name="currency"><option value="thb" selected>🇹🇭 바트</option><option value="krw">🇰🇷 원화</option></select>
         </div>
-        <div class="form-row"><label class="form-label">금액</label><input class="form-input" type="number" step="0.01" name="amount_input" required></div>
+        <div class="form-row"><label class="form-label">결제 금액</label><input class="form-input" type="number" step="0.01" name="amount_input" required></div>
         <div class="form-row"><label class="form-label">결제자</label><input class="form-input" name="payer" placeholder="예: A가족"></div>
-        <div class="form-row" style="grid-column: 1 / -1;"><label class="form-label">내용</label><input class="form-input" name="description" value="${esc(ev.name)}"></div>
+        <div class="form-row" style="grid-column:1/-1"><label class="form-label">내용</label><input class="form-input" name="description" value="${esc(ev.name)}"></div>
       </div>
       <div class="btn-bar">
-        <button class="btn" type="button" data-act="cancel-event-expense">취소</button>
+        <button class="btn btn-ghost" type="button" data-act="cancel-event-expense">취소</button>
         <button class="btn btn-primary" type="submit">비용 저장</button>
       </div>
     </form>`;
@@ -242,20 +260,29 @@ function eventExpenseFormHTML(day, ev) {
 
 function eventRowHTML(day, ev) {
   if (editingEvent === ev.id) return eventFormHTML(day.id, ev);
+  const linked = expenses.filter((e) => e.event_id === ev.id);
+  const linkedTotal = linked.reduce((s, e) => s + e.amount_thb, 0);
+  const dotIcon = ev.type === 'flight' ? 'plane' : ev.type === 'meal' ? 'meal' : 'temple';
   return `
-    <div class="event-row type-${esc(ev.type)}">
-      <div class="time mono">${esc(ev.time)}</div>
-      <div class="body">
-        <div class="name">${esc(ev.name)}</div>
-        ${ev.desc ? `<div class="desc">${esc(ev.desc)}</div>` : ''}
-        ${ev.map_query ? `<a class="maplink" href="${mapLink(ev.map_query)}" target="_blank" rel="noopener">📍 지도</a>` : ''}
+    <div class="event-row" data-type="${esc(ev.type)}">
+      <div class="event-time mono">${esc(ev.time)}</div>
+      <div class="event-track"><span class="event-dot"><svg><use href="#i-${dotIcon}"></use></svg></span></div>
+      <div class="event-body">
+        <div class="event-head">
+          <span class="event-name">${esc(ev.name)}</span>
+          <span class="event-tag">${TYPE_LABEL[ev.type] || '일정'}</span>
+        </div>
+        ${ev.desc ? `<span class="event-desc">${esc(ev.desc)}</span>` : ''}
+        ${ev.map_query ? `<a class="maplink" href="${mapLink(ev.map_query)}" target="_blank" rel="noopener">지도에서 보기</a>` : ''}
         ${memoBlockHTML(day, ev)}
+        <div class="event-actions">
+          <button class="btn-xs" type="button" data-act="${addingExpenseFor === ev.id ? 'cancel-event-expense' : 'add-event-expense'}" data-id="${ev.id}">${addingExpenseFor === ev.id ? '취소' : '비용 추가'}</button>
+          <button class="btn-xs" type="button" data-act="edit-event" data-id="${ev.id}">일정 수정</button>
+          <button class="btn-xs" type="button" data-act="del-event" data-id="${ev.id}">삭제</button>
+          ${linkedTotal ? `<span class="cost-badge">🇹🇭 ${bahtStr(linkedTotal)} 기록됨</span>` : ''}
+        </div>
         ${eventExpensesHTML(ev)}
-        ${addingExpenseFor === ev.id ? eventExpenseFormHTML(day, ev) : `<button class="btn btn-xs" data-act="add-event-expense" data-id="${ev.id}">💵 비용 추가</button>`}
-      </div>
-      <div class="row-actions">
-        <button class="icon-btn" data-act="edit-event" data-id="${ev.id}" title="수정">✏️</button>
-        <button class="icon-btn danger" data-act="del-event" data-id="${ev.id}" title="삭제">🗑</button>
+        ${addingExpenseFor === ev.id ? eventExpenseFormHTML(day, ev) : ''}
       </div>
     </div>`;
 }
@@ -265,148 +292,135 @@ function eventFormHTML(dayId, ev) {
   return `
     <form class="inline-form" data-act="save-event" data-day-id="${dayId}" data-id="${e.id || ''}">
       <div class="form-grid">
-        <div class="form-row"><label class="form-label">시간</label><input class="form-input" name="time" value="${esc(e.time)}" placeholder="09:00" inputmode="numeric" maxlength="5" data-autotime="1"></div>
-        <div class="form-row"><label class="form-label">종류</label>
+        <div class="form-row"><label class="form-label">시간</label><input class="form-input" name="time" value="${esc(e.time)}" placeholder="14:00" inputmode="numeric" maxlength="5" data-autotime="1"></div>
+        <div class="form-row"><label class="form-label">분류</label>
           <select class="form-input" name="type">
-            <option value="activity" ${e.type === 'activity' ? 'selected' : ''}>활동</option>
-            <option value="meal" ${e.type === 'meal' ? 'selected' : ''}>식사</option>
             <option value="flight" ${e.type === 'flight' ? 'selected' : ''}>항공</option>
+            <option value="activity" ${e.type === 'activity' ? 'selected' : ''}>일정</option>
+            <option value="meal" ${e.type === 'meal' ? 'selected' : ''}>식사</option>
           </select>
         </div>
-        <div class="form-row" style="grid-column: span 2;"><label class="form-label">이름</label><input class="form-input" name="name" value="${esc(e.name)}" required></div>
-        <div class="form-row" style="grid-column: 1 / -1;"><label class="form-label">설명</label><input class="form-input" name="desc" value="${esc(e.desc)}"></div>
-        <div class="form-row" style="grid-column: 1 / -1;"><label class="form-label">지도 검색어 (선택)</label><input class="form-input" name="map_query" value="${esc(e.map_query || '')}" placeholder="예: Wat Arun Bangkok"></div>
+        <div class="form-row" style="grid-column:span 2"><label class="form-label">일정 이름</label><input class="form-input" name="name" value="${esc(e.name)}" required></div>
+        <div class="form-row" style="grid-column:1/-1"><label class="form-label">설명</label><input class="form-input" name="desc" value="${esc(e.desc)}"></div>
+        <div class="form-row" style="grid-column:1/-1"><label class="form-label">지도 검색어</label><input class="form-input" name="map_query" value="${esc(e.map_query || '')}" placeholder="예: Wat Arun Bangkok"></div>
       </div>
       <div class="btn-bar">
-        <button class="btn" type="button" data-act="cancel-event">취소</button>
-        <button class="btn btn-primary" type="submit">저장</button>
+        <button class="btn btn-ghost" type="button" data-act="cancel-event">취소</button>
+        <button class="btn btn-primary" type="submit">${e.id ? '일정 저장' : '일정 추가'}</button>
       </div>
     </form>`;
 }
 
-function hotelBoxHTML(day) {
-  if (editingHotel === day.id) {
-    return `
-      <form class="inline-form" data-act="save-hotel" data-id="${day.id}">
-        <div class="form-grid">
-          <div class="form-row" style="grid-column: 1 / -1;"><label class="form-label">숙소명</label><input class="form-input" name="hotel_name" value="${esc(day.hotel_name || '')}"></div>
-          <div class="form-row" style="grid-column: 1 / -1;"><label class="form-label">주소</label><input class="form-input" name="hotel_addr" value="${esc(day.hotel_addr || '')}"></div>
-          <div class="form-row" style="grid-column: 1 / -1;"><label class="form-label">메모</label><input class="form-input" name="hotel_note" value="${esc(day.hotel_note || '')}"></div>
-          <div class="form-row"><label class="form-label">지도 검색어</label><input class="form-input" name="hotel_map_query" value="${esc(day.hotel_map_query || '')}"></div>
-          <div class="form-row"><label class="form-label">홈페이지</label><input class="form-input" name="hotel_website" value="${esc(day.hotel_website || '')}"></div>
-        </div>
-        <div class="btn-bar">
-          <button class="btn" type="button" data-act="cancel-hotel">취소</button>
-          <button class="btn btn-primary" type="submit">저장</button>
-        </div>
-      </form>`;
-  }
-  if (!day.hotel_name) {
-    return `<button class="btn btn-sm" data-act="edit-hotel" data-id="${day.id}" style="margin-top:10px;">+ 숙소 정보 추가</button>`;
-  }
+function hotelCardHTML(day) {
+  if (!day.hotel_name) return '';
   return `
-    <div class="hotel-box">
-      <div class="name">🏨 ${esc(day.hotel_name)}</div>
-      ${day.hotel_addr ? `<div class="addr">${esc(day.hotel_addr)}</div>` : ''}
-      ${day.hotel_note ? `<div style="margin-top:4px;">${esc(day.hotel_note)}</div>` : ''}
-      <div class="btn-bar" style="justify-content:flex-start; margin-top:8px;">
-        ${day.hotel_map_query ? `<a class="btn btn-sm" href="${mapLink(day.hotel_map_query)}" target="_blank" rel="noopener">📍 지도</a>` : ''}
-        ${day.hotel_website ? `<a class="btn btn-sm" href="${esc(day.hotel_website)}" target="_blank" rel="noopener">🔗 홈페이지</a>` : ''}
-        <button class="btn btn-sm" data-act="edit-hotel" data-id="${day.id}">✏️ 수정</button>
-      </div>
+    <div class="hotel-card">
+      <svg class="deco" viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="52" fill="none" stroke="var(--bl-400)" stroke-width="3"></circle><circle cx="60" cy="60" r="34" fill="var(--bl-200)"></circle></svg>
+      <p class="kicker"><svg width="15" height="15"><use href="#i-hotel"></use></svg> 숙소 체크인</p>
+      <p class="name">${esc(day.hotel_name)}</p>
+      ${day.hotel_note ? `<p class="note">${esc(day.hotel_note)}</p>` : ''}
+      ${day.hotel_addr ? `<p class="addr">${esc(day.hotel_addr)}</p>` : ''}
+      ${(day.hotel_map_query || day.hotel_website) ? `<p class="links">
+        ${day.hotel_map_query ? `<a href="${mapLink(day.hotel_map_query)}" target="_blank" rel="noopener">지도 열기</a>` : ''}
+        ${day.hotel_website ? `<a href="${esc(day.hotel_website)}" target="_blank" rel="noopener">호텔 사이트</a>` : ''}
+      </p>` : ''}
     </div>`;
 }
 
-function dayHeadHTML(day) {
-  if (editingDay === day.id) {
-    return `
-      <form class="inline-form" data-act="save-day" data-id="${day.id}" style="flex:1;">
-        <div class="form-grid">
-          <div class="form-row"><label class="form-label">일차</label><input class="form-input" type="number" name="day_number" value="${day.day_number}"></div>
-          <div class="form-row"><label class="form-label">날짜</label><input class="form-input" type="date" name="date" value="${esc(day.date)}"></div>
-          <div class="form-row"><label class="form-label">도시</label>
-            <select class="form-input" name="city">
-              <option value="bkk" ${day.city === 'bkk' ? 'selected' : ''}>방콕</option>
-              <option value="pty" ${day.city === 'pty' ? 'selected' : ''}>파타야</option>
-            </select>
-          </div>
-          <div class="form-row"><label class="form-label">아이콘</label>
-            <select class="form-input" name="icon">
-              ${ICONS.map((ic) => `<option value="${ic}" ${day.icon === ic ? 'selected' : ''}>${ICON_LABEL[ic]}</option>`).join('')}
-            </select>
-          </div>
-          <div class="form-row" style="grid-column: 1 / -1;"><label class="form-label">제목</label><input class="form-input" name="title" value="${esc(day.title)}" required></div>
+function dayEditFormHTML(day) {
+  return `
+    <div class="day-edit-card">
+      <p class="card-kicker">날짜 정보 수정</p>
+      <form class="form-grid" data-act="save-day-combined" data-id="${day.id}">
+        <div class="form-row"><label class="form-label">일차</label><input class="form-input" type="number" min="1" name="day_number" value="${day.day_number}"></div>
+        <div class="form-row"><label class="form-label">날짜</label><input class="form-input" type="date" name="date" value="${esc(day.date)}"></div>
+        <div class="form-row"><label class="form-label">도시</label>
+          <select class="form-input" name="city">
+            <option value="bkk" ${day.city === 'bkk' ? 'selected' : ''}>방콕</option>
+            <option value="pty" ${day.city === 'pty' ? 'selected' : ''}>파타야</option>
+          </select>
         </div>
-        <div class="btn-bar">
-          <button class="btn" type="button" data-act="cancel-day">취소</button>
+        <div class="form-row"><label class="form-label">아이콘</label>
+          <select class="form-input" name="icon">
+            ${ICONS.map((ic) => `<option value="${ic}" ${day.icon === ic ? 'selected' : ''}>${ICON_LABEL[ic]}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-row" style="grid-column:1/-1"><label class="form-label">제목</label><input class="form-input" name="title" value="${esc(day.title)}" required></div>
+        <div class="form-row" style="grid-column:1/-1"><label class="form-label">숙소 이름</label><input class="form-input" name="hotel_name" value="${esc(day.hotel_name || '')}" placeholder="비워두면 표시되지 않습니다"></div>
+        <div class="form-row" style="grid-column:1/-1"><label class="form-label">숙소 메모</label><input class="form-input" name="hotel_note" value="${esc(day.hotel_note || '')}"></div>
+        <div class="form-row" style="grid-column:1/-1"><label class="form-label">숙소 주소</label><input class="form-input" name="hotel_addr" value="${esc(day.hotel_addr || '')}"></div>
+        <div class="form-row"><label class="form-label">숙소 지도 검색어</label><input class="form-input" name="hotel_map_query" value="${esc(day.hotel_map_query || '')}"></div>
+        <div class="form-row"><label class="form-label">숙소 홈페이지</label><input class="form-input" name="hotel_website" value="${esc(day.hotel_website || '')}"></div>
+        <div class="btn-bar" style="grid-column:1/-1">
           <button class="btn btn-primary" type="submit">저장</button>
+          <button class="btn btn-ghost" type="button" data-act="cancel-day-edit">취소</button>
         </div>
-      </form>`;
-  }
+      </form>
+    </div>`;
+}
+
+function dayPanelHeadHTML(day) {
   const icon = ICONS.includes(day.icon) ? day.icon : 'bag';
-  const collapsed = collapsedDays.has(day.id);
   return `
-    <button class="icon-btn fold-btn" data-act="toggle-day" data-id="${day.id}" title="${collapsed ? '펼치기' : '접기'}">
-      <span class="fold-chevron ${collapsed ? 'collapsed' : ''}">▾</span>
-    </button>
-    <div class="badge ${day.city === 'pty' ? 'pty' : ''}"><svg><use href="#i-${icon}"></use></svg></div>
-    <div class="meta">
-      <div class="date mono"><span class="daynum">Day ${day.day_number}</span> · ${fmtDate(day.date)} · ${CITY_LABEL[day.city] || day.city}</div>
-      <div class="title">${esc(day.title)}</div>
+    <div class="day-panel-head">
+      <span class="day-badge"><svg><use href="#i-${icon}"></use></svg></span>
+      <p class="day-eyebrow">Day ${day.day_number} · ${fmtDayEyebrow(day)}</p>
+      <span class="day-panel-actions">
+        <button class="btn-xs" type="button" data-act="edit-day" data-id="${day.id}">날짜 정보 수정</button>
+        <button class="btn-xs" type="button" data-act="add-event" data-id="${day.id}">＋ 일정 추가</button>
+        <button class="btn-xs" type="button" data-act="del-day" data-id="${day.id}">날짜 삭제</button>
+      </span>
     </div>
-    <div class="row-actions">
-      <button class="icon-btn" data-act="edit-day" data-id="${day.id}" title="수정">✏️</button>
-      <button class="icon-btn danger" data-act="del-day" data-id="${day.id}" title="삭제">🗑</button>
-    </div>`;
+    <h2 class="day-title">${esc(day.title)}</h2>`;
 }
 
-function dayCardHTML(day, revealClass) {
-  const collapsed = collapsedDays.has(day.id);
-  return `
-    <div class="day-card ${revealClass} ${collapsed ? 'collapsed' : ''}" data-day-id="${day.id}">
-      <div class="day-card-head">${dayHeadHTML(day)}</div>
-      <div class="day-card-body-wrap"><div class="day-card-body">
-        ${(day.events || []).map((ev) => eventRowHTML(day, ev)).join('') || '<p class="empty-hint">아직 등록된 일정이 없습니다.</p>'}
-        ${addingEventFor === day.id ? eventFormHTML(day.id, null) : `<button class="btn btn-sm" data-act="add-event" data-id="${day.id}" style="margin-top:10px;">+ 항목 추가</button>`}
-        ${hotelBoxHTML(day)}
-      </div></div>
-    </div>`;
+function newEventCardHTML(day) {
+  if (addingEventFor !== day.id) return '';
+  return `<div class="new-event-card"><p class="card-kicker">Day ${day.day_number} 일정 추가</p>${eventFormHTML(day.id, null)}</div>`;
 }
 
-let hasRevealedDaysOnce = false;
-function renderDays() {
-  const container = document.getElementById('daysContainer');
-  const revealClass = hasRevealedDaysOnce ? '' : 'reveal';
-  container.innerHTML = days.length
-    ? days.map((d) => dayCardHTML(d, revealClass)).join('')
-    : '<p class="empty-hint">아직 일정이 없습니다. 아래 버튼으로 첫 날짜를 추가해보세요.</p>';
+function renderDayRail() {
+  const rail = document.getElementById('dayRail');
+  rail.innerHTML = days.map((d) => `
+    <button type="button" class="day-rail-btn ${d.id === selectedDayId ? 'active' : ''}" data-act="select-day" data-id="${d.id}">
+      <span class="day-rail-mark">${d.day_number}</span>
+      <span class="day-rail-info">
+        <span class="day-rail-date">${fmtDateShort(d.date)}</span>
+        <span class="day-rail-sub">${CITY_LABEL[d.city] || d.city} · ${(d.events || []).length}건</span>
+      </span>
+    </button>`).join('') + `<button type="button" class="day-rail-add" data-act="add-day">＋ 날짜 추가</button>`;
+}
 
-  if (!hasRevealedDaysOnce && days.length) {
-    hasRevealedDaysOnce = true;
-    if ('IntersectionObserver' in window) {
-      const io = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('in-view');
-            io.unobserve(entry.target);
-          }
-        });
-      }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
-      container.querySelectorAll('.day-card.reveal').forEach((el, i) => {
-        el.style.transitionDelay = `${Math.min(i * 60, 300)}ms`;
-        io.observe(el);
-      });
-    } else {
-      container.querySelectorAll('.day-card.reveal').forEach((el) => el.classList.add('in-view'));
-    }
-  }
-  if (typeof updateFoldAllLabel === 'function') updateFoldAllLabel();
+function renderDayPanel() {
+  const panel = document.getElementById('dayPanel');
+  const day = days.find((d) => d.id === selectedDayId) || days[0];
+  if (!day) { panel.innerHTML = '<p class="empty-hint">날짜가 없습니다. 왼쪽에서 날짜를 추가해보세요.</p>'; return; }
+  const idx = days.findIndex((d) => d.id === day.id);
+  const prevDay = days[(idx - 1 + days.length) % days.length];
+  const nextDay = days[(idx + 1) % days.length];
+  panel.innerHTML = `
+    ${dayPanelHeadHTML(day)}
+    ${editingDayId === day.id ? dayEditFormHTML(day) : ''}
+    ${hotelCardHTML(day)}
+    <div class="event-list">
+      ${(day.events || []).map((ev) => eventRowHTML(day, ev)).join('') || '<p class="empty-hint">아직 등록된 일정이 없습니다.</p>'}
+    </div>
+    ${newEventCardHTML(day)}
+    <div class="day-nav">
+      <button class="btn btn-ghost" type="button" data-act="goto-day" data-id="${prevDay.id}">이전 날</button>
+      <button class="btn btn-primary" type="button" data-act="goto-day" data-id="${nextDay.id}">다음 날</button>
+    </div>`;
 }
 
 async function loadDays() {
   days = await api.get('/api/days');
-  renderDays();
+  if (!days.some((d) => d.id === selectedDayId)) {
+    selectedDayId = days.length ? days[0].id : null;
+  }
+  renderDayRail();
+  renderDayPanel();
   populateDaySelect();
+  updateDday();
 }
 
 function formatTimeValue(digits) {
@@ -414,141 +428,132 @@ function formatTimeValue(digits) {
   if (digits.length === 3) return `${digits.slice(0, 1)}:${digits.slice(1)}`;
   return `${digits.slice(0, 2)}:${digits.slice(2, 4)}`;
 }
-document.getElementById('daysContainer').addEventListener('input', (e) => {
+
+const itinView = document.getElementById('view-itinerary');
+
+itinView.addEventListener('input', (e) => {
   if (!e.target.matches('[data-autotime]')) return;
   const digits = e.target.value.replace(/\D/g, '').slice(0, 4);
   e.target.value = formatTimeValue(digits);
 });
 
-function applyCurrencyStep(selectEl) {
-  const form = selectEl.closest('form');
-  const amountInput = form && form.querySelector('input[name="amount_input"]');
-  if (!amountInput) return;
-  const isKrw = selectEl.value === 'krw';
-  amountInput.step = isKrw ? '1' : '0.01';
-  amountInput.setAttribute('inputmode', isKrw ? 'numeric' : 'decimal');
-}
-document.getElementById('daysContainer').addEventListener('change', (e) => {
+itinView.addEventListener('change', (e) => {
   if (e.target.matches('select[name="currency"]')) applyCurrencyStep(e.target);
 });
 
-document.getElementById('daysContainer').addEventListener('click', async (e) => {
+function resetItinFormState() {
+  editingDayId = null; addingEventFor = null; editingEvent = null; addingMemoFor = null;
+  addingExpenseFor = null; editingExpenseId = null;
+}
+
+itinView.addEventListener('click', async (e) => {
   const btn = e.target.closest('button[data-act]');
   if (!btn) return;
   const act = btn.dataset.act;
   const id = btn.dataset.id ? Number(btn.dataset.id) : null;
 
-  if (act === 'toggle-day') {
-    if (collapsedDays.has(id)) collapsedDays.delete(id); else collapsedDays.add(id);
-    persistCollapsed();
-    renderDays();
-  }
-  else if (act === 'edit-day') { editingDay = id; collapsedDays.delete(id); renderDays(); }
-  else if (act === 'cancel-day') { editingDay = null; renderDays(); }
-  else if (act === 'del-day') {
-    if (confirm('이 날짜와 안의 모든 일정을 삭제할까요?')) { await api.del(`/api/days/${id}`); await loadDays(); }
-  } else if (act === 'edit-hotel') { editingHotel = id; renderDays(); }
-  else if (act === 'cancel-hotel') { editingHotel = null; renderDays(); }
-  else if (act === 'edit-event') { editingEvent = id; addingEventFor = null; renderDays(); }
-  else if (act === 'cancel-event') { editingEvent = null; addingEventFor = null; renderDays(); }
-  else if (act === 'del-event') {
-    if (confirm('이 항목을 삭제할까요?')) {
-      const day = days.find((d) => d.events.some((ev) => ev.id === id));
-      const updated = await api.del(`/api/days/events/${id}`);
-      if (day) Object.assign(day, updated);
-      renderDays();
+  if (act === 'select-day' || act === 'goto-day') {
+    selectedDayId = id;
+    resetItinFormState();
+    renderDayRail(); renderDayPanel();
+  } else if (act === 'add-day') {
+    const day = await api.post('/api/days', { title: '새 날짜', city: 'bkk', date: '' });
+    await loadDays();
+    selectedDayId = day.id; editingDayId = day.id;
+    renderDayRail(); renderDayPanel();
+    toast('날짜를 추가했습니다');
+  } else if (act === 'edit-day') {
+    editingDayId = editingDayId === id ? null : id;
+    renderDayPanel();
+  } else if (act === 'cancel-day-edit') {
+    editingDayId = null; renderDayPanel();
+  } else if (act === 'del-day') {
+    if (days.length <= 1) { toast('마지막 날짜는 삭제할 수 없습니다'); return; }
+    if (confirm('이 날짜와 안의 모든 일정을 삭제할까요?')) {
+      await api.del(`/api/days/${id}`);
+      await loadDays();
+      await loadExpenses();
+      toast('날짜를 삭제했습니다');
     }
-  } else if (act === 'add-event') { addingEventFor = id; editingEvent = null; renderDays(); }
-  else if (act === 'add-event-expense') { addingExpenseFor = id; renderDays(); }
-  else if (act === 'cancel-event-expense') { addingExpenseFor = null; renderDays(); }
-  else if (act === 'edit-expense-from-event') { editingExpenseId = id; renderDays(); }
-  else if (act === 'cancel-expense-edit') { editingExpenseId = null; renderDays(); }
-  else if (act === 'add-event-memo' || act === 'edit-event-memo') { addingMemoFor = id; renderDays(); }
-  else if (act === 'cancel-event-memo') { addingMemoFor = null; renderDays(); }
-  else if (act === 'del-expense-from-event') {
+  } else if (act === 'add-event') {
+    addingEventFor = addingEventFor === id ? null : id;
+    editingEvent = null;
+    renderDayPanel();
+  } else if (act === 'cancel-event') {
+    addingEventFor = null; editingEvent = null; renderDayPanel();
+  } else if (act === 'edit-event') {
+    editingEvent = editingEvent === id ? null : id;
+    addingEventFor = null;
+    renderDayPanel();
+  } else if (act === 'del-event') {
+    if (confirm('이 항목을 삭제할까요?')) {
+      await api.del(`/api/days/events/${id}`);
+      await loadDays();
+      await loadExpenses();
+      toast('일정을 삭제했습니다');
+    }
+  } else if (act === 'add-event-expense' || act === 'cancel-event-expense') {
+    addingExpenseFor = act === 'add-event-expense' ? id : null;
+    renderDayPanel();
+  } else if (act === 'edit-expense-from-event') {
+    editingExpenseId = id; renderDayPanel();
+  } else if (act === 'cancel-expense-edit') {
+    editingExpenseId = null; renderDayPanel();
+  } else if (act === 'del-expense-from-event') {
     if (confirm('이 지출 내역을 삭제할까요?')) {
       await api.del(`/api/expenses/${id}`);
+      toast('비용을 삭제했습니다');
       await loadExpenses();
     }
+  } else if (act === 'add-event-memo' || act === 'edit-event-memo') {
+    addingMemoFor = id; renderDayPanel();
+  } else if (act === 'cancel-event-memo') {
+    addingMemoFor = null; renderDayPanel();
   }
 });
 
-document.getElementById('daysContainer').addEventListener('submit', async (e) => {
+itinView.addEventListener('submit', async (e) => {
   const form = e.target.closest('form[data-act]');
   if (!form) return;
   e.preventDefault();
   const act = form.dataset.act;
   const fd = Object.fromEntries(new FormData(form).entries());
 
-  if (act === 'save-day') {
-    const updated = await api.put(`/api/days/${form.dataset.id}`, fd);
-    const idx = days.findIndex((d) => d.id === updated.id);
-    if (idx >= 0) days[idx] = updated;
-    editingDay = null;
-    renderDays();
-  } else if (act === 'save-hotel') {
-    const updated = await api.put(`/api/days/${form.dataset.id}`, fd);
-    const idx = days.findIndex((d) => d.id === updated.id);
-    if (idx >= 0) days[idx] = updated;
-    editingHotel = null;
-    renderDays();
+  if (act === 'save-day-combined') {
+    if (!fd.hotel_name || !fd.hotel_name.trim()) {
+      fd.hotel_name = ''; fd.hotel_note = ''; fd.hotel_addr = ''; fd.hotel_map_query = ''; fd.hotel_website = '';
+    }
+    await api.put(`/api/days/${form.dataset.id}`, fd);
+    editingDayId = null;
+    await loadDays();
+    toast('날짜 정보를 저장했습니다');
   } else if (act === 'save-event') {
     const dayId = form.dataset.dayId;
     const eventId = form.dataset.id;
-    const updated = eventId
-      ? await api.put(`/api/days/events/${eventId}`, fd)
-      : await api.post(`/api/days/${dayId}/events`, fd);
-    const idx = days.findIndex((d) => d.id === updated.id);
-    if (idx >= 0) days[idx] = updated;
-    editingEvent = null;
-    addingEventFor = null;
-    renderDays();
+    if (eventId) await api.put(`/api/days/events/${eventId}`, fd);
+    else await api.post(`/api/days/${dayId}/events`, fd);
+    editingEvent = null; addingEventFor = null;
+    await loadDays();
+    toast(eventId ? '일정을 저장했습니다' : '일정을 추가했습니다');
   } else if (act === 'save-event-memo') {
-    const eventId = form.dataset.id;
-    const updated = await api.put(`/api/days/events/${eventId}`, { memo: fd.memo || '' });
-    const idx = days.findIndex((d) => d.id === updated.id);
-    if (idx >= 0) days[idx] = updated;
+    await api.put(`/api/days/events/${form.dataset.id}`, { memo: fd.memo || '' });
     addingMemoFor = null;
-    renderDays();
+    await loadDays();
+    toast(fd.memo ? '메모를 저장했습니다' : '메모를 비웠습니다');
   } else if (act === 'save-event-expense') {
-    await api.post('/api/expenses', {
-      ...applyExpenseAmounts(fd),
-      day_id: form.dataset.dayId,
-      event_id: form.dataset.eventId,
-    });
+    await api.post('/api/expenses', { ...applyExpenseAmounts(fd), day_id: form.dataset.dayId, event_id: form.dataset.eventId });
     addingExpenseFor = null;
     await loadExpenses();
+    toast('비용을 저장했습니다');
   } else if (act === 'save-event-expense-edit') {
     await api.put(`/api/expenses/${form.dataset.id}`, applyExpenseAmounts(fd));
     editingExpenseId = null;
     await loadExpenses();
+    toast('비용을 수정했습니다');
   }
 });
 
-document.getElementById('addDayBtn').addEventListener('click', async () => {
-  const day = await api.post('/api/days', { title: '새 날짜', city: 'bkk', date: '' });
-  days.push(day);
-  editingDay = day.id;
-  renderDays();
-  populateDaySelect();
-});
-
-const foldAllBtn = document.getElementById('foldAllBtn');
-function updateFoldAllLabel() {
-  const allCollapsed = days.length > 0 && days.every((d) => collapsedDays.has(d.id));
-  foldAllBtn.textContent = allCollapsed ? '전체 펼치기' : '전체 접기';
-}
-foldAllBtn.addEventListener('click', () => {
-  const allCollapsed = days.length > 0 && days.every((d) => collapsedDays.has(d.id));
-  if (allCollapsed) collapsedDays.clear();
-  else days.forEach((d) => collapsedDays.add(d.id));
-  persistCollapsed();
-  renderDays();
-});
-
 /* ---------------- Expenses ---------------- */
-
-let paymentFilter = 'all'; // 'all' | '카드' | '현금'
 
 function exchangeRate() {
   return Number(localStorage.getItem('krwPerThb') || 41);
@@ -565,6 +570,9 @@ function applyExpenseAmounts(fd) {
   if (fd.currency === 'krw') fd.amount_krw = Number(fd.amount_input) || 0;
   return fd;
 }
+function filteredExpenses() {
+  return paymentFilter === 'all' ? expenses : expenses.filter((e) => (e.payment_method || '카드') === paymentFilter);
+}
 
 const fxInput = document.getElementById('fxRate');
 if (fxInput) {
@@ -572,8 +580,7 @@ if (fxInput) {
   fxInput.addEventListener('change', () => {
     const v = Number(fxInput.value) || 41;
     localStorage.setItem('krwPerThb', v);
-    renderSummary();
-    renderExpenses();
+    renderExpenseHero(); renderExpenseTable(); updateConvertHint();
   });
 }
 
@@ -581,122 +588,99 @@ const fxFetchBtn = document.getElementById('fxFetchBtn');
 const fxUpdatedEl = document.getElementById('fxUpdated');
 async function fetchTodayFx(interactive) {
   if (!fxInput) return;
-  if (fxFetchBtn) { fxFetchBtn.disabled = true; fxFetchBtn.textContent = '⏳ 조회 중...'; }
+  if (fxFetchBtn) { fxFetchBtn.disabled = true; fxFetchBtn.textContent = '조회 중...'; }
   try {
     const data = await api.get('/api/fx');
     if (data && data.rate) {
       const rounded = Math.round(data.rate * 100) / 100;
       fxInput.value = rounded;
       localStorage.setItem('krwPerThb', rounded);
-      renderSummary();
-      renderExpenses();
+      renderExpenseHero(); renderExpenseTable(); updateConvertHint();
       if (fxUpdatedEl) {
         const dateStr = new Date(data.updated_at).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
         fxUpdatedEl.textContent = data.stale
           ? `⚠️ ${dateStr} 기준 (재조회 실패, 이전 값 사용)`
           : `${dateStr} 환율 기준 · frankfurter.app`;
       }
+      toast(`환율을 ${rounded}원으로 갱신했습니다`);
     }
   } catch (e) {
     if (fxUpdatedEl) fxUpdatedEl.textContent = '환율 조회 실패 — 직접 입력해주세요';
-    if (interactive) alert('환율 조회에 실패했습니다. 직접 입력해주세요.');
+    if (interactive) toast('환율 조회에 실패했습니다. 직접 입력해주세요.');
   } finally {
-    if (fxFetchBtn) { fxFetchBtn.disabled = false; fxFetchBtn.textContent = '🔄 오늘 환율'; }
+    if (fxFetchBtn) { fxFetchBtn.disabled = false; fxFetchBtn.textContent = '오늘 환율 불러오기'; }
   }
 }
 if (fxFetchBtn) fxFetchBtn.addEventListener('click', () => fetchTodayFx(true));
 
-const paymentFilterEl = document.getElementById('paymentFilter');
-if (paymentFilterEl) {
-  paymentFilterEl.addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-filter]');
-    if (!btn) return;
-    paymentFilter = btn.dataset.filter;
-    document.querySelectorAll('#paymentFilter .seg').forEach((b) => b.classList.toggle('active', b === btn));
-    renderSummary();
-    renderExpenses();
-  });
-}
+document.getElementById('paymentFilter').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-filter]');
+  if (!btn) return;
+  paymentFilter = btn.dataset.filter;
+  renderExpenseHero(); renderExpenseTable();
+});
 
-function filteredExpenses() {
-  return paymentFilter === 'all' ? expenses : expenses.filter((e) => (e.payment_method || '카드') === paymentFilter);
-}
+document.getElementById('breakdownToggleBtn').addEventListener('click', () => {
+  breakdownOpen = !breakdownOpen;
+  renderExpenseHero();
+});
 
 async function loadExpenses() {
   expenses = await api.get('/api/expenses');
-  renderExpenses();
-  renderSummary();
-  if (days.length) renderDays(); // refresh linked-expense info shown on event rows
+  renderExpenseHero();
+  renderExpenseTable();
+  if (days.length) renderDayPanel();
 }
 
-function renderExpenseTotalBar() {
-  const total = expenses.reduce((s, e) => s + e.amount_thb, 0);
-  const krwEl = document.getElementById('expenseTotalKrw');
-  const thbEl = document.getElementById('expenseTotalThb');
-  if (krwEl) krwEl.textContent = `${krw(total)}원`;
-  if (thbEl) thbEl.textContent = `฿${total.toLocaleString('ko-KR')}`;
-}
-
-let expensesCollapsed = true; // default: only the total bar shows, rest folded
-try {
-  const saved = localStorage.getItem('expensesCollapsed');
-  if (saved !== null) expensesCollapsed = saved === '1';
-} catch (e) {}
-const expenseBodyWrap = document.getElementById('expenseBodyWrap');
-const expenseFoldBtn = document.getElementById('expenseFoldBtn');
-function applyExpenseFold() {
-  if (expenseBodyWrap) expenseBodyWrap.classList.toggle('collapsed', expensesCollapsed);
-  if (expenseFoldBtn) expenseFoldBtn.textContent = expensesCollapsed ? '펼치기' : '접기';
-}
-if (expenseFoldBtn) {
-  expenseFoldBtn.addEventListener('click', () => {
-    expensesCollapsed = !expensesCollapsed;
-    try { localStorage.setItem('expensesCollapsed', expensesCollapsed ? '1' : '0'); } catch (e) {}
-    applyExpenseFold();
-  });
-}
-applyExpenseFold();
-
-function renderSummary() {
+function renderExpenseHero() {
   const list = filteredExpenses();
   const total = list.reduce((s, e) => s + e.amount_thb, 0);
-  const byPayer = {};
-  list.forEach((e) => { if (e.payer) byPayer[e.payer] = (byPayer[e.payer] || 0) + e.amount_thb; });
-  const strip = document.getElementById('summaryStrip');
-  const moneyCard = (thb, label) => `
-    <div class="summary-card">
-      <div class="num mono">${krw(thb)}원</div>
-      <div class="lbl">${label} · ฿${thb.toLocaleString('ko-KR')}</div>
-    </div>`;
-  const cards = [
-    moneyCard(total, paymentFilter === 'all' ? '전체 지출' : `${paymentFilter} 지출`),
-    ...Object.entries(byPayer).map(([p, v]) => moneyCard(v, `${esc(p)} 결제`)),
-  ];
-  strip.innerHTML = cards.join('');
-  renderExpenseTotalBar();
+
+  document.getElementById('expenseFilterLabel').textContent = `총 지출 · ${paymentFilter === 'all' ? '전체' : paymentFilter}`;
+  document.getElementById('expenseTotalKrw').textContent = `🇰🇷 ${krw(total)}원`;
+  document.getElementById('expenseTotalThb').textContent = `🇹🇭 ${bahtStr(total)}`;
+  document.getElementById('expenseRowCount').textContent = `${list.length}건`;
+
+  document.querySelectorAll('#paymentFilter .expense-filter-btn').forEach((b) => {
+    b.classList.toggle('active', b.dataset.filter === paymentFilter);
+  });
+
+  const breakdownEl = document.getElementById('categoryBreakdown');
+  document.getElementById('breakdownToggleBtn').textContent = breakdownOpen ? '분류 접기' : '분류 펼치기';
+  if (!breakdownOpen) { breakdownEl.innerHTML = ''; return; }
+
+  const byCat = {};
+  list.forEach((e) => { byCat[e.category] = (byCat[e.category] || 0) + e.amount_thb; });
+  const keys = Object.keys(byCat).sort((a, b) => byCat[b] - byCat[a]);
+  const max = keys.length ? byCat[keys[0]] : 1;
+  breakdownEl.innerHTML = keys.map((k) => `
+    <div class="breakdown-row">
+      <div class="head"><span class="lbl">${esc(k)}</span><span class="amt mono">${krw(byCat[k])}원</span></div>
+      <div class="breakdown-bar"><span style="width:${Math.max(6, Math.round((byCat[k] / max) * 100))}%"></span></div>
+    </div>`).join('');
 }
 
 function expenseLinkTag(e) {
   if (e.event_id) {
     const found = findEventById(e.event_id);
-    if (found) return `<span class="link-pill">Day ${found.day.day_number} · ${esc(found.event.name)}</span>`;
+    if (found) return esc(`Day ${found.day.day_number} · ${found.event.name}`);
   }
   if (e.day_id) {
     const d = days.find((dd) => dd.id === e.day_id);
-    if (d) return `<span class="link-pill">Day ${d.day_number}</span>`;
+    if (d) return `Day ${d.day_number}`;
   }
-  return '<span class="ink-faint">-</span>';
+  return '—';
 }
 
 function expenseAmountHTML(e) {
   if (e.currency === 'krw') {
     const amt = e.amount_krw != null ? e.amount_krw : Math.round(e.amount_thb * exchangeRate());
-    return `<span class="amount-krw">${Number(amt).toLocaleString('ko-KR')}원</span>`;
+    return `<span class="krw mono">${Number(amt).toLocaleString('ko-KR')}원</span>`;
   }
-  return `<span class="amount-krw">${krw(e.amount_thb)}원</span><span class="amount-thb">฿${Number(e.amount_thb).toLocaleString('ko-KR')}</span>`;
+  return `<span class="krw mono">${krw(e.amount_thb)}원</span><span class="thb mono">${bahtStr(e.amount_thb)}</span>`;
 }
 
-function renderExpenses() {
+function renderExpenseTable() {
   const tbody = document.getElementById('expenseRows');
   const list = filteredExpenses();
   if (!list.length) {
@@ -706,37 +690,123 @@ function renderExpenses() {
   tbody.innerHTML = list.map((e) => `
     <tr>
       <td class="mono" data-label="날짜">${esc(e.date)}</td>
-      <td data-label="분류"><span class="cat-pill">${esc(e.category)}</span></td>
-      <td data-label="결제수단"><span class="pm-pill">${esc(e.payment_method || '카드')}</span></td>
+      <td data-label="분류"><span class="cat-pill" data-category="${esc(e.category)}">${esc(e.category)}</span></td>
+      <td data-label="결제수단">${esc(e.payment_method || '카드')}</td>
       <td data-label="내용">${esc(e.description)}</td>
-      <td data-label="연결">${expenseLinkTag(e)}</td>
-      <td data-label="결제자">${esc(e.payer)}</td>
-      <td data-label="메모">${esc(e.memo || '')}</td>
+      <td data-label="연결"><span class="link-pill">${expenseLinkTag(e)}</span></td>
+      <td data-label="결제자">${esc(e.payer || '—')}</td>
+      <td data-label="메모">${esc(e.memo || '—')}</td>
       <td class="amount" data-label="금액">${expenseAmountHTML(e)}</td>
-      <td class="row-del" data-label=""><button class="btn btn-sm btn-danger" data-id="${e.id}" data-act="del-expense">🗑 삭제</button></td>
+      <td class="row-actions-cell" data-label="">
+        <button class="row-link-btn" type="button" data-act="edit-expense" data-id="${e.id}">수정</button>
+        <button class="row-link-btn" type="button" data-act="del-expense" data-id="${e.id}" style="color:var(--red)">삭제</button>
+      </td>
     </tr>`).join('');
 }
 
-const expenseCurrencySelect = document.querySelector('#expenseForm select[name="currency"]');
-if (expenseCurrencySelect) {
-  expenseCurrencySelect.addEventListener('change', () => applyCurrencyStep(expenseCurrencySelect));
+function updateAmountLabel() {
+  const cur = document.getElementById('x-cur').value;
+  document.getElementById('x-amt-label').textContent = cur === 'krw' ? '결제 금액 (원)' : '결제 금액 (바트)';
 }
+
+function updateConvertHint() {
+  const form = document.getElementById('expenseForm');
+  const amt = parseFloat(form.amount_input.value);
+  const hintEl = document.getElementById('convertHint');
+  const rate = exchangeRate();
+  if (isFinite(amt) && amt > 0) {
+    hintEl.textContent = form.currency.value === 'krw'
+      ? `${Number(amt).toLocaleString('ko-KR')}원 → ${bahtStr(amt / rate)} (환율 ${rate})`
+      : `${bahtStr(amt)} → ${krw(amt)}원 (환율 ${rate})`;
+  } else {
+    hintEl.textContent = '통화를 고르고 금액을 입력하면 환산값이 표시됩니다';
+  }
+}
+
+document.getElementById('x-cur').addEventListener('change', (e) => {
+  applyCurrencyStep(e.target);
+  updateAmountLabel();
+  updateConvertHint();
+});
+
+function applyCurrencyStep(selectEl) {
+  const form = selectEl.closest('form');
+  const amountInput = form && form.querySelector('input[name="amount_input"]');
+  if (!amountInput) return;
+  const isKrw = selectEl.value === 'krw';
+  amountInput.step = isKrw ? '1' : '0.01';
+  amountInput.setAttribute('inputmode', isKrw ? 'numeric' : 'decimal');
+}
+
+function startEditExpense(id) {
+  const e = expenses.find((x) => x.id === id);
+  if (!e) return;
+  editingTopExpenseId = id;
+  const form = document.getElementById('expenseForm');
+  form.date.value = e.date;
+  form.category.value = e.category;
+  form.payment_method.value = e.payment_method || '카드';
+  form.currency.value = e.currency || 'thb';
+  form.amount_input.value = e.currency === 'krw' ? (e.amount_krw ?? Math.round(e.amount_thb * exchangeRate())) : e.amount_thb;
+  form.description.value = e.description || '';
+  form.payer.value = e.payer || '';
+  form.memo.value = e.memo || '';
+  applyCurrencyStep(form.currency);
+  updateAmountLabel();
+  updateConvertHint();
+  document.getElementById('expenseFormTitle').textContent = '비용 수정';
+  document.getElementById('expenseSubmitBtn').textContent = '수정 저장';
+  document.getElementById('expenseCancelEditBtn').hidden = false;
+  document.querySelector('.expense-form-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function cancelExpenseEdit(keep) {
+  editingTopExpenseId = null;
+  const form = document.getElementById('expenseForm');
+  form.reset();
+  form.date.value = (keep && keep.date) || new Date().toISOString().slice(0, 10);
+  form.category.value = (keep && keep.category) || '식비';
+  form.payment_method.value = (keep && keep.payment_method) || '카드';
+  form.currency.value = (keep && keep.currency) || 'thb';
+  form.payer.value = (keep && keep.payer) || '';
+  applyCurrencyStep(form.currency);
+  updateAmountLabel();
+  updateConvertHint();
+  document.getElementById('expenseFormTitle').textContent = '비용 추가';
+  document.getElementById('expenseSubmitBtn').textContent = '비용 추가';
+  document.getElementById('expenseCancelEditBtn').hidden = true;
+}
+document.getElementById('expenseCancelEditBtn').addEventListener('click', () => cancelExpenseEdit());
 
 document.getElementById('expenseForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const fd = Object.fromEntries(new FormData(e.target).entries());
-  await api.post('/api/expenses', applyExpenseAmounts(fd));
-  e.target.reset();
-  if (expenseCurrencySelect) applyCurrencyStep(expenseCurrencySelect);
+  const form = e.target;
+  const fd = Object.fromEntries(new FormData(form).entries());
+  if (!(fd.description || '').trim()) { toast('내용을 입력하세요'); return; }
+  if (!(Number(fd.amount_input) > 0)) { toast('금액을 입력하세요'); return; }
+  const payload = applyExpenseAmounts({ ...fd });
+  const wasEditing = editingTopExpenseId;
+  if (wasEditing) await api.put(`/api/expenses/${wasEditing}`, payload);
+  else await api.post('/api/expenses', payload);
+  toast(wasEditing ? '비용을 수정했습니다' : '비용을 추가했습니다');
+  cancelExpenseEdit(wasEditing ? null : { date: fd.date, category: fd.category, payment_method: fd.payment_method, currency: fd.currency, payer: fd.payer });
   await loadExpenses();
 });
+document.getElementById('expenseForm').addEventListener('input', updateConvertHint);
 
 document.getElementById('expenseRows').addEventListener('click', async (e) => {
-  const btn = e.target.closest('button[data-act="del-expense"]');
+  const btn = e.target.closest('button[data-act]');
   if (!btn) return;
-  if (confirm('이 지출 내역을 삭제할까요?')) {
-    await api.del(`/api/expenses/${btn.dataset.id}`);
-    await loadExpenses();
+  const id = Number(btn.dataset.id);
+  if (btn.dataset.act === 'edit-expense') {
+    startEditExpense(id);
+  } else if (btn.dataset.act === 'del-expense') {
+    if (confirm('이 지출 내역을 삭제할까요?')) {
+      await api.del(`/api/expenses/${id}`);
+      if (editingTopExpenseId === id) cancelExpenseEdit();
+      toast('비용을 삭제했습니다');
+      await loadExpenses();
+    }
   }
 });
 
@@ -756,66 +826,45 @@ async function loadImages() {
 }
 
 function galleryItemHTML(img) {
+  const day = img.day_id ? days.find((d) => d.id === img.day_id) : null;
   return `
-    <div class="gallery-item">
-      <img src="/uploads/${esc(img.filename)}" alt="${esc(img.caption || '')}" data-act="view-image" data-src="/uploads/${esc(img.filename)}">
-      <button class="icon-btn danger del" data-act="del-image" data-id="${img.id}">🗑</button>
-      ${img.caption ? `<div class="cap">${esc(img.caption)}</div>` : ''}
-    </div>`;
+    <figure>
+      <button type="button" class="photo-btn" data-act="view-image" data-src="/uploads/${esc(img.filename)}">
+        <img src="/uploads/${esc(img.filename)}" alt="${esc(img.caption || '')}">
+      </button>
+      <figcaption>
+        <span class="cap">${esc(img.caption || '')}</span>
+        <span class="day">${day ? `Day ${day.day_number}` : '날짜 없음'}</span>
+        <button class="row-link-btn" type="button" data-act="del-image" data-id="${img.id}">삭제</button>
+      </figcaption>
+    </figure>`;
 }
 
 function renderGallery() {
   const grid = document.getElementById('galleryGrid');
-  if (!images.length) {
-    grid.innerHTML = '<p class="empty-hint">아직 업로드된 사진이 없습니다.</p>';
-    return;
-  }
-
-  const byDay = new Map(); // day_id (or 'none') -> images[]
-  images.forEach((img) => {
-    const key = img.day_id || 'none';
-    if (!byDay.has(key)) byDay.set(key, []);
-    byDay.get(key).push(img);
-  });
-  byDay.forEach((list) => list.sort((a, b) => a.uploaded_at.localeCompare(b.uploaded_at)));
-
-  const sortedDays = days.slice().sort((a, b) => a.sort_order - b.sort_order);
-  const sections = [];
-
-  sortedDays.forEach((day) => {
-    const list = byDay.get(day.id);
-    if (!list || !list.length) return;
-    sections.push(`
-      <div class="day-group-head">
-        <span class="n mono">Day ${day.day_number}</span>
-        <span class="t">${esc(day.title)}</span>
-        <span class="c">${list.length}장</span>
-      </div>
-      <div class="gallery-grid">${list.map(galleryItemHTML).join('')}</div>`);
-  });
-
-  const unassigned = byDay.get('none');
-  if (unassigned && unassigned.length) {
-    sections.push(`
-      <div class="day-group-head">
-        <span class="n mono">—</span>
-        <span class="t">날짜 미지정</span>
-        <span class="c">${unassigned.length}장</span>
-      </div>
-      <div class="gallery-grid">${unassigned.map(galleryItemHTML).join('')}</div>`);
-  }
-
-  grid.innerHTML = sections.join('');
+  const empty = document.getElementById('photoEmpty');
+  if (!images.length) { grid.innerHTML = ''; empty.hidden = false; return; }
+  empty.hidden = true;
+  grid.innerHTML = images.map(galleryItemHTML).join('');
 }
+
+const photoFileInput = document.getElementById('p-file');
+const photoHintEl = document.getElementById('photoHint');
+photoFileInput.addEventListener('change', () => {
+  const f = photoFileInput.files && photoFileInput.files[0];
+  photoHintEl.textContent = f ? `${f.name} 선택됨` : '파일을 고르고 캡션을 적은 뒤 업로드하세요';
+});
 
 document.getElementById('imageForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const form = e.target;
   const file = form.file.files[0];
-  if (!file) return;
+  if (!file) { toast('사진 파일을 선택하세요'); return; }
   const { filename } = await api.uploadFile(file);
   await api.post('/api/images', { filename, caption: form.caption.value, day_id: form.day_id.value || null });
   form.reset();
+  photoHintEl.textContent = '파일을 고르고 캡션을 적은 뒤 업로드하세요';
+  toast('사진을 올렸습니다');
   await loadImages();
 });
 
@@ -830,6 +879,7 @@ document.getElementById('galleryGrid').addEventListener('click', async (e) => {
   } else if (delBtn) {
     if (confirm('이 사진을 삭제할까요?')) {
       await api.del(`/api/images/${delBtn.dataset.id}`);
+      toast('사진을 삭제했습니다');
       await loadImages();
     }
   }
@@ -845,15 +895,18 @@ lightbox.addEventListener('click', () => lightbox.classList.remove('open'));
   } catch (e) { return; }
 
   try {
-    document.getElementById('expenseForm').date.value = new Date().toISOString().slice(0, 10);
-    await loadDays(); // gallery grouping needs `days` populated first
+    document.getElementById('x-date').value = new Date().toISOString().slice(0, 10);
+    updateAmountLabel();
+    updateConvertHint();
+    renderSpots();
+    await loadDays();
     await Promise.all([loadExpenses(), loadImages(), loadWeather()]);
     if (!localStorage.getItem('krwPerThb')) fetchTodayFx(false); // first-ever visit: seed a real rate instead of the 41 fallback
   } catch (err) {
     console.error('init failed:', err);
-    const container = document.getElementById('daysContainer');
-    if (container) {
-      container.innerHTML = `<p class="empty-hint">불러오는 중 오류가 발생했습니다: ${esc(err.message || String(err))}<br>새로고침해도 안 되면 화면을 캡처해서 알려주세요.</p>`;
+    const panel = document.getElementById('dayPanel');
+    if (panel) {
+      panel.innerHTML = `<p class="empty-hint">불러오는 중 오류가 발생했습니다: ${esc(err.message || String(err))}<br>새로고침해도 안 되면 화면을 캡처해서 알려주세요.</p>`;
     }
   }
 })();

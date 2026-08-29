@@ -18,8 +18,9 @@
 <body>
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>
-      <symbol id="i-plane" viewBox="0 0 24 24"><path d="M17.8 19.2 16 11l3.5-3.5c.8-.8.8-2.2 0-3s-2.2-.8-3 0L13 8l-8.2-1.8c-.4-.1-.8.1-1 .4l-.3.6c-.2.4-.1.8.2 1.1L9 12l-3 3H3l-1 2 3 1 1 3 2-1v-3l3-3 3.3 5.3c.3.3.7.4 1.1.2l.6-.3c.3-.2.5-.6.4-1Z"/></symbol>
+      <symbol id="i-plane" viewBox="0 0 24 24" fill="currentColor"><path d="M17.8 19.2 16 11l3.5-3.5c.8-.8.8-2.2 0-3s-2.2-.8-3 0L13 8l-8.2-1.8c-.4-.1-.8.1-1 .4l-.3.6c-.2.4-.1.8.2 1.1L9 12l-3 3H3l-1 2 3 1 1 3 2-1v-3l3-3 3.3 5.3c.3.3.7.4 1.1.2l.6-.3c.3-.2.5-.6.4-1Z"/></symbol>
       <symbol id="i-temple" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2 14 6h-4l2-3.8Z"/><path d="M12 5 9 9h6l-3-4Z"/><rect x="7" y="9" width="10" height="9"/><rect x="4" y="19.5" width="16" height="1.6" rx=".8"/></symbol>
+      <symbol id="i-meal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v8M11 3v8M9 11v10M17 3c-1.5 2-2 4-2 6h4c0-2-.5-4-2-6ZM17 9v12"/></symbol>
       <symbol id="i-pawprint" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="16" r="3.4"/><circle cx="6.5" cy="10" r="1.8"/><circle cx="11" cy="7" r="1.8"/><circle cx="15.5" cy="7.5" r="1.8"/><circle cx="18.5" cy="11.5" r="1.8"/></symbol>
       <symbol id="i-van" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8.5" width="14" height="7.5" rx="1.6"/><path d="M16.5 11h2.6l2 2.6V16h-4.6"/><circle cx="7" cy="17.5" r="1.7"/><circle cx="16" cy="17.5" r="1.7"/></symbol>
       <symbol id="i-anchor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5.5" r="2"/><path d="M12 7.5v11.5"/><path d="M8.2 11h7.6"/><path d="M5.5 14.5a6.5 6.5 0 0 0 13 0"/></symbol>
@@ -27,129 +28,179 @@
       <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v3M12 18.5v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2.5 12h3M18.5 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></symbol>
       <symbol id="i-bag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12H7L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></symbol>
       <symbol id="i-suitcase" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="8" width="17" height="11" rx="2"/><path d="M9 8V6.3A2.3 2.3 0 0 1 11.3 4h1.4A2.3 2.3 0 0 1 15 6.3V8"/><path d="M3.5 13h17"/></symbol>
+      <symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 2.6 15.4 0 18M12 3c-2.6 2.6-2.6 15.4 0 18"/></symbol>
+      <symbol id="i-hotel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20V9l9-5 9 5v11"/><path d="M9 20v-6h6v6"/></symbol>
     </defs>
   </svg>
 
-  <nav class="topbar">
-    <div class="brand">🌴 방콕·파타야 트립</div>
-    <div class="tabs" id="tabs">
-      <button class="tab active" data-view="itinerary">일정</button>
-      <button class="tab" data-view="expenses">가계부</button>
-      <button class="tab" data-view="gallery">사진</button>
-      <div class="tab-pill" id="tabPill"></div>
+  <div class="page">
+    <nav class="topbar">
+      <span class="brand"><svg width="27" height="27"><use href="#i-globe"/></svg> 방콕 · 파타야</span>
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-view="itinerary">일정</button>
+        <button class="tab" data-view="expenses">가계부</button>
+        <button class="tab" data-view="gallery">사진</button>
+        <button class="tab" data-view="spots">가볼 곳</button>
+      </div>
+      <button class="theme-toggle" id="themeToggle" title="화면 밝기 전환">어둡게</button>
+      <button class="logout-btn" id="logoutBtn">로그아웃</button>
+    </nav>
+
+    <div class="weather-strip">
+      <span class="th-clock" id="thClock"></span>
+      <span class="weather-items" id="weatherItems"></span>
     </div>
-    <div class="spacer"></div>
-    <button class="theme-toggle" id="themeToggle" title="화면 밝기 전환">☀️</button>
-    <button class="logout-btn" id="logoutBtn">로그아웃</button>
-  </nav>
 
-  <div class="weather-strip" id="weatherStrip">
-    <span class="weather-item" id="thClock"></span>
-    <span class="weather-items" id="weatherItems"></span>
-  </div>
-
-  <main class="wrap">
-    <section class="view active" id="view-itinerary">
-      <div class="view-head">
-        <h2>일정</h2>
-        <button class="btn btn-sm" id="foldAllBtn">전체 접기</button>
+    <section class="hero" id="hero">
+      <svg class="hero-art" viewBox="0 0 200 132" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+        <circle cx="136" cy="40" r="30" fill="var(--sand)" opacity=".5"/>
+        <circle cx="136" cy="40" r="18" fill="var(--sand)"/>
+        <g fill="var(--bl-800)">
+          <polygon points="14,126 76,126 66,100 24,100"/>
+          <polygon points="30,100 60,100 52,78 38,78"/>
+          <polygon points="41,78 51,78 46,60 44,60"/>
+          <circle cx="45" cy="57" r="2.4"/>
+        </g>
+        <g fill="none" stroke="var(--bl-800)" stroke-linecap="round">
+          <path d="M156,130 C148,104 144,76 149,50" stroke-width="5"/>
+          <path d="M149,50 Q126,38 104,48" stroke-width="3.5"/>
+          <path d="M149,50 Q132,32 112,32" stroke-width="3.5"/>
+          <path d="M149,50 Q166,34 186,40" stroke-width="3.5"/>
+          <path d="M149,50 Q164,28 184,24" stroke-width="3.5"/>
+        </g>
+      </svg>
+      <svg class="hero-wave" viewBox="0 0 380 30" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0,12 Q19,2 38,12 T76,12 T114,12 T152,12 T190,12 T228,12 T266,12 T304,12 T342,12 T380,12 L380,30 L0,30 Z" fill="var(--bl-400)" opacity=".55"/>
+        <path d="M0,20 Q19,11 38,20 T76,20 T114,20 T152,20 T190,20 T228,20 T266,20 T304,20 T342,20 T380,20 L380,30 L0,30 Z" fill="var(--bl-500)" opacity=".6"/>
+      </svg>
+      <div class="hero-copy">
+        <p class="hero-eyebrow"><span class="dot"></span> Family Trip · 8박 9일</p>
+        <h1><span>방콕에서 파타야까지,</span><span class="accent">2027년 1월 26일 출발</span></h1>
+        <p class="hero-sub">일정을 직접 고치고, 지출을 바트·원화로 기록하고, 참고 사진을 올리는 일행 전용 화면입니다.</p>
+        <span class="dday-badge"><span class="num" id="ddayNum">D-?</span><span class="lbl">출발까지</span></span>
       </div>
-      <div id="daysContainer">
-        <div class="skeleton-card"></div>
-        <div class="skeleton-card"></div>
-        <div class="skeleton-card"></div>
-      </div>
-      <button class="btn" id="addDayBtn" style="margin-top: 10px;">+ 날짜 추가</button>
     </section>
 
-    <section class="view" id="view-expenses">
-      <div class="view-head">
-        <h2>가계부</h2>
-        <div class="fx-block">
-          <label class="fx-control">환율 1바트 = <input class="form-input fx-input mono" type="number" step="0.1" min="0.1" id="fxRate"> 원</label>
-          <button class="btn btn-sm" id="fxFetchBtn" type="button">🔄 오늘 환율</button>
-          <span class="fx-updated" id="fxUpdated"></span>
+    <main>
+      <section class="view active" id="view-itinerary">
+        <div class="itin-layout">
+          <div class="day-rail" id="dayRail">
+            <div class="skeleton-card" style="height:56px;"></div>
+            <div class="skeleton-card" style="height:56px;"></div>
+            <div class="skeleton-card" style="height:56px;"></div>
+          </div>
+          <div id="dayPanel"></div>
         </div>
-      </div>
+      </section>
 
-      <div class="expense-total-bar">
-        <div class="expense-total-info">
-          <span class="lbl">총 지출</span>
-          <span class="num mono" id="expenseTotalKrw">0원</span>
-          <span class="thb mono" id="expenseTotalThb">฿0</span>
-        </div>
-        <button class="btn btn-sm" id="expenseFoldBtn" type="button">펼치기</button>
-      </div>
-
-      <div class="expense-body-wrap" id="expenseBodyWrap"><div class="expense-body">
-        <div class="seg-filter" id="paymentFilter">
-          <button class="seg active" type="button" data-filter="all">전체</button>
-          <button class="seg" type="button" data-filter="카드">카드</button>
-          <button class="seg" type="button" data-filter="현금">현금</button>
+      <section class="view" id="view-expenses">
+        <div class="view-head-inline" style="margin-top:0;">
+          <h2>가계부</h2>
+          <span class="fx-block" style="margin-left:auto;">
+            <span class="fx-control">🇹🇭 1바트 = <input class="form-input mono fx-input" type="number" step="0.1" min="0.1" id="fxRate"> 🇰🇷 원</span>
+            <button class="btn btn-sm" id="fxFetchBtn" type="button">오늘 환율 불러오기</button>
+            <span class="fx-updated" id="fxUpdated"></span>
+          </span>
         </div>
 
-        <div class="summary-strip" id="summaryStrip"></div>
+        <div class="expense-hero">
+          <div class="expense-hero-row">
+            <div>
+              <p class="kicker" id="expenseFilterLabel">총 지출 · 전체</p>
+              <p class="total-krw mono" id="expenseTotalKrw">🇰🇷 0원</p>
+              <p class="total-thb mono"><span id="expenseTotalThb">🇹🇭 ฿0</span> · <span id="expenseRowCount">0건</span></p>
+            </div>
+            <div class="expense-hero-actions">
+              <span class="expense-filters" id="paymentFilter">
+                <button class="expense-filter-btn active" type="button" data-filter="all">전체</button>
+                <button class="expense-filter-btn" type="button" data-filter="카드">카드</button>
+                <button class="expense-filter-btn" type="button" data-filter="현금">현금</button>
+              </span>
+              <button class="breakdown-toggle" id="breakdownToggleBtn" type="button">분류 접기</button>
+            </div>
+          </div>
+          <div class="breakdown" id="categoryBreakdown"></div>
+        </div>
 
-        <form class="inline-form" id="expenseForm">
-          <div class="form-grid">
-            <div class="form-row"><label class="form-label">날짜</label><input class="form-input" type="date" name="date" required></div>
-            <div class="form-row"><label class="form-label">분류</label>
-              <select class="form-input" name="category">
+        <div class="expense-form-card">
+          <p class="card-kicker" id="expenseFormTitle">비용 추가</p>
+          <form class="expense-form-grid" id="expenseForm">
+            <div class="form-row"><label class="form-label" for="x-date">날짜</label><input class="form-input" type="date" name="date" id="x-date" required></div>
+            <div class="form-row"><label class="form-label" for="x-cat">분류</label>
+              <select class="form-input" name="category" id="x-cat">
                 <option>숙소</option><option>교통</option><option>식비</option>
                 <option>액티비티</option><option>쇼핑</option><option>마사지</option><option>기타</option>
               </select>
             </div>
-            <div class="form-row"><label class="form-label">결제수단</label>
-              <select class="form-input" name="payment_method">
+            <div class="form-row"><label class="form-label" for="x-pay">결제수단</label>
+              <select class="form-input" name="payment_method" id="x-pay">
                 <option>카드</option><option>현금</option>
               </select>
             </div>
-            <div class="form-row"><label class="form-label">내용</label><input class="form-input" name="description" placeholder="예: 뿌펜 저녁"></div>
-            <div class="form-row"><label class="form-label">통화</label>
-              <select class="form-input" name="currency">
+            <div class="form-row"><label class="form-label" for="x-cur">통화</label>
+              <select class="form-input" name="currency" id="x-cur">
                 <option value="thb" selected>🇹🇭 바트</option>
                 <option value="krw">🇰🇷 원화</option>
               </select>
             </div>
-            <div class="form-row"><label class="form-label">결제 금액</label><input class="form-input" type="number" step="0.01" name="amount_input" required></div>
-            <div class="form-row"><label class="form-label">결제자</label><input class="form-input" name="payer" placeholder="예: A가족"></div>
-            <div class="form-row"><label class="form-label">메모</label><input class="form-input" name="memo"></div>
+            <div class="form-row"><label class="form-label" id="x-amt-label" for="x-amt">결제 금액 (바트)</label><input class="form-input" type="number" step="0.01" name="amount_input" id="x-amt" placeholder="1200" required></div>
+            <div class="form-row"><label class="form-label" for="x-desc">내용</label><input class="form-input" name="description" id="x-desc" placeholder="예: 뿌펜 저녁"></div>
+            <div class="form-row"><label class="form-label" for="x-payer">결제자</label><input class="form-input" name="payer" id="x-payer" placeholder="예: A가족"></div>
+            <div class="form-row"><label class="form-label" for="x-memo">메모</label><input class="form-input" name="memo" id="x-memo"></div>
+          </form>
+          <div class="photo-form-actions">
+            <span class="convert-hint" id="convertHint">통화를 고르고 금액을 입력하면 환산값이 표시됩니다</span>
+            <span style="margin-left:auto;display:flex;gap:8px;">
+              <button class="btn btn-ghost" id="expenseCancelEditBtn" type="button" hidden>편집 취소</button>
+              <button class="btn btn-primary" id="expenseSubmitBtn" type="submit" form="expenseForm">비용 추가</button>
+            </span>
           </div>
-          <div class="btn-bar"><button class="btn btn-primary" type="submit">비용 추가</button></div>
-        </form>
+        </div>
 
-        <div class="table-wrap" style="margin-top:16px;">
+        <div class="table-wrap">
           <table>
             <thead><tr><th>날짜</th><th>분류</th><th>결제수단</th><th>내용</th><th>연결</th><th>결제자</th><th>메모</th><th style="text-align:right">금액</th><th></th></tr></thead>
             <tbody id="expenseRows"></tbody>
           </table>
         </div>
-      </div></div>
-    </section>
+      </section>
 
-    <section class="view" id="view-gallery">
-      <div class="view-head">
-        <h2>사진</h2>
-        <span class="sub">참고 이미지 업로드</span>
-      </div>
-      <form class="inline-form" id="imageForm">
-        <div class="form-grid">
-          <div class="form-row"><label class="form-label">사진 파일</label><input class="form-input" type="file" name="file" accept="image/*" required></div>
-          <div class="form-row"><label class="form-label">캡션</label><input class="form-input" name="caption" placeholder="예: 뤼드시암 호텔 로비"></div>
-          <div class="form-row"><label class="form-label">관련 날짜</label><select class="form-input" name="day_id" id="imageDaySelect"><option value="">선택 안함</option></select></div>
+      <section class="view" id="view-gallery">
+        <div class="view-head-inline" style="margin-top:0;">
+          <h2>사진</h2>
+          <span class="sub">참고 이미지를 올리고 날짜에 연결합니다</span>
         </div>
-        <div class="btn-bar"><button class="btn btn-primary" type="submit">업로드</button></div>
-      </form>
-      <div id="galleryGrid"></div>
-    </section>
-  </main>
 
-  <footer class="app-footer">
-    <div class="divider"></div>
-    🌴 방콕·파타야 트립 · 2027.01.26 – 02.03
-  </footer>
+        <div class="photo-form-card">
+          <form class="photo-form-grid" id="imageForm">
+            <div class="form-row"><label class="form-label" for="p-file">사진 파일</label><input class="form-input" type="file" id="p-file" name="file" accept="image/*" required></div>
+            <div class="form-row"><label class="form-label" for="p-cap">캡션</label><input class="form-input" id="p-cap" name="caption" placeholder="예: 뤼드시암 호텔 로비"></div>
+            <div class="form-row"><label class="form-label" for="imageDaySelect">관련 날짜</label><select class="form-input" id="imageDaySelect" name="day_id"><option value="">선택 안함</option></select></div>
+          </form>
+          <div class="photo-form-actions">
+            <span class="photo-hint" id="photoHint">파일을 고르고 캡션을 적은 뒤 업로드하세요</span>
+            <button class="btn btn-primary" type="submit" form="imageForm" style="margin-left:auto;">업로드</button>
+          </div>
+        </div>
+
+        <div class="photo-grid" id="galleryGrid"></div>
+        <div class="photo-empty" id="photoEmpty" hidden>올린 사진이 아직 없습니다.</div>
+      </section>
+
+      <section class="view" id="view-spots">
+        <div class="view-head-inline" style="margin-top:0;">
+          <h2>가볼 곳</h2>
+          <span class="sub">일정에서 뽑은 여섯 곳 · 지도로 바로 연결</span>
+        </div>
+        <div class="spots-grid" id="spotsGrid"></div>
+      </section>
+    </main>
+
+    <footer class="app-footer">방콕 · 파타야 트립 · 2027.01.26 – 02.03 · 일행 전용</footer>
+  </div>
 
   <div class="lightbox" id="lightbox"><img id="lightboxImg" alt=""></div>
+  <div class="toast" id="toast"></div>
 
   <script src="/js/api.js"></script>
   <script src="/js/app.js"></script>
