@@ -126,7 +126,7 @@ input, select, textarea { font: inherit; color: inherit; }
 /* ---------- Auth page ---------- */
 .auth-wrap { min-height: 100%; display: flex; align-items: center; justify-content: center; padding: 24px; }
 .auth-card {
-  width: 100%; max-width: 380px; background: var(--color-surface); border: 1px solid var(--line);
+  width: 100%; max-width: 380px; background: var(--color-neutral-100); border: 1px solid var(--line);
   border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); overflow: hidden;
 }
 .auth-hero { border-bottom: 1px solid var(--line); background: var(--bl-100); }
@@ -256,7 +256,7 @@ input, select, textarea { font: inherit; color: inherit; }
 /* ---------- Forms ---------- */
 .form-input {
   width: 100%; min-height: 36px; padding: 7px 14px; font: inherit; font-size: 14px; color: var(--ink);
-  background: var(--color-surface); border: 1px solid var(--line); border-radius: 999px;
+  background: var(--color-neutral-100); border: 1px solid var(--line); border-radius: 999px;
 }
 .form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent); outline: none; }
 select.form-input { appearance: none; background-image: none; }
