@@ -146,7 +146,7 @@ async function loadSpots() {
 }
 
 function spotFormHTML(category, spot) {
-  const s = spot || { id: null, category, day: '', city: '', name: '', note: '', map_query: '' };
+  const s = spot || { id: null, category, day: '', city: '', name: '', note: '', map_query: '', image: '' };
   return `
     <form class="inline-form spot-form" data-act="save-spot" data-id="${s.id || ''}">
       <div class="form-grid">
@@ -165,6 +165,7 @@ function spotFormHTML(category, spot) {
         <div class="form-row" style="grid-column: 1 / -1;"><label class="form-label">이름</label><input class="form-input" name="name" value="${esc(s.name)}" required placeholder="예: 왓아룬"></div>
         <div class="form-row" style="grid-column: 1 / -1;"><label class="form-label">설명</label><input class="form-input" name="note" value="${esc(s.note)}" placeholder="한 줄 설명"></div>
         <div class="form-row" style="grid-column: 1 / -1;"><label class="form-label">지도 검색어</label><input class="form-input" name="map_query" value="${esc(s.map_query || '')}" placeholder="예: Wat Arun Bangkok"></div>
+        <div class="form-row" style="grid-column: 1 / -1;"><label class="form-label">사진 URL (선택)</label><input class="form-input" name="image" value="${esc(s.image || '')}" placeholder="https://... 이미지 주소"></div>
       </div>
       <div class="btn-bar">
         <button class="btn" type="button" data-act="cancel-spot">취소</button>
@@ -184,7 +185,9 @@ function spotFormAreaHTML(category) {
 
 function spotCardHTML(p) {
   return `
-    <div class="spot-card" data-tint="${p.tint}">
+    <div class="spot-card${p.image ? ' has-photo' : ''}" data-tint="${p.tint}">
+      ${p.image ? `<img class="spot-photo" src="${esc(p.image)}" alt="" loading="lazy" onerror="const c=this.closest('.spot-card'); if(c){c.classList.remove('has-photo'); const s=c.querySelector('.spot-scrim'); if(s) s.remove();} this.remove();">` : ''}
+      ${p.image ? '<div class="spot-scrim"></div>' : ''}
       <div class="spot-card-actions">
         <button class="icon-btn sm" type="button" data-act="edit-spot" data-id="${p.id}" title="수정">✏️</button>
         <button class="icon-btn sm danger" type="button" data-act="del-spot" data-id="${p.id}" title="삭제">🗑</button>

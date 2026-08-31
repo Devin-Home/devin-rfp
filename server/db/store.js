@@ -309,6 +309,7 @@ function seedSpotsIfEmpty(seedSpots) {
       name: s.name,
       note: s.note || '',
       map_query: s.map || null,
+      image: s.image || null,
       tint: s.tint || 'bl-100',
       sort_order: i,
       created_at: new Date().toISOString(),
@@ -336,6 +337,7 @@ function createSpot(fields) {
     name: fields.name || '새 장소',
     note: fields.note || '',
     map_query: fields.map_query || null,
+    image: fields.image || null,
     tint: SPOT_TINTS[(maxOrder + 1) % SPOT_TINTS.length],
     sort_order: maxOrder + 1,
     created_at: new Date().toISOString(),
@@ -348,7 +350,7 @@ function createSpot(fields) {
 function updateSpot(id, fields) {
   const spot = state.spots.find((s) => s.id === Number(id));
   if (!spot) return null;
-  const editable = ['city', 'name', 'note', 'map_query'];
+  const editable = ['city', 'name', 'note', 'map_query', 'image'];
   editable.forEach((k) => {
     if (fields[k] !== undefined) spot[k] = fields[k];
   });

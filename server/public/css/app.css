@@ -519,20 +519,23 @@ figcaption .day { font-size: 12px; font-weight: 400; color: var(--ink-faint); wh
   transition: transform .2s ease, box-shadow .2s ease;
 }
 .spot-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); text-decoration: none; }
-.spot-card::before { content: ''; position: absolute; right: -30px; top: -40px; width: 150px; height: 150px; border-radius: 50%; background: color-mix(in srgb, #fff 22%, transparent); pointer-events: none; }
-.spot-card::after { content: ''; position: absolute; right: 18px; bottom: 16px; width: 78px; height: 78px; border-radius: 50%; border: 2px dashed color-mix(in srgb, #fff 32%, transparent); pointer-events: none; }
+.spot-card:not(.has-photo)::before { content: ''; position: absolute; right: -30px; top: -40px; width: 150px; height: 150px; border-radius: 50%; background: color-mix(in srgb, #fff 22%, transparent); pointer-events: none; }
+.spot-card:not(.has-photo)::after { content: ''; position: absolute; right: 18px; bottom: 16px; width: 78px; height: 78px; border-radius: 50%; border: 2px dashed color-mix(in srgb, #fff 32%, transparent); pointer-events: none; }
 .spot-card[data-tint="bl-200"] { background: linear-gradient(0deg, color-mix(in srgb, var(--bl-900) 78%, transparent) 0%, transparent 62%), linear-gradient(155deg, var(--bl-300), var(--bl-800)); }
 .spot-card[data-tint="bl-100"] { background: linear-gradient(0deg, color-mix(in srgb, var(--bl-900) 78%, transparent) 0%, transparent 62%), linear-gradient(155deg, var(--bl-400), var(--bl-900)); }
 .spot-card[data-tint="sand"] { background: linear-gradient(0deg, color-mix(in srgb, var(--bl-900) 78%, transparent) 0%, transparent 62%), linear-gradient(155deg, var(--sand), var(--bl-700)); }
 .spot-card[data-tint="bl-300"] { background: linear-gradient(0deg, color-mix(in srgb, var(--bl-900) 78%, transparent) 0%, transparent 62%), linear-gradient(155deg, var(--bl-500), var(--bl-900)); }
-.spot-icon { position: relative; display: flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 50%; background: color-mix(in srgb, #fff 90%, transparent); color: var(--bl-900); }
+.spot-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; transition: transform .3s ease; }
+.spot-card:hover .spot-photo { transform: scale(1.05); }
+.spot-scrim { position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(10,15,25,.05) 0%, rgba(10,15,25,.2) 45%, rgba(10,15,25,.85) 100%); pointer-events: none; }
+.spot-icon { position: relative; z-index: 2; display: flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 50%; background: color-mix(in srgb, #fff 90%, transparent); color: var(--bl-900); }
 .spot-icon svg { width: 22px; height: 22px; }
-.spot-eyebrow { position: relative; display: block; margin-top: auto; font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; font-weight: 600; color: color-mix(in srgb, #fff 85%, transparent); }
-.spot-name { position: relative; display: block; margin-top: 6px; font-family: var(--font-heading); font-weight: 400; font-size: 20px; line-height: 1.25; color: #fff; }
-.spot-note { position: relative; display: block; margin-top: 8px; font-size: 13.5px; line-height: 1.55; color: color-mix(in srgb, #fff 82%, transparent); max-width: 26ch; }
-.spot-card-actions { position: absolute; top: 14px; right: 14px; z-index: 1; display: flex; gap: 6px; }
+.spot-eyebrow { position: relative; z-index: 2; display: block; margin-top: auto; font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; font-weight: 600; color: color-mix(in srgb, #fff 85%, transparent); }
+.spot-name { position: relative; z-index: 2; display: block; margin-top: 6px; font-family: var(--font-heading); font-weight: 400; font-size: 20px; line-height: 1.25; color: #fff; }
+.spot-note { position: relative; z-index: 2; display: block; margin-top: 8px; font-size: 13.5px; line-height: 1.55; color: color-mix(in srgb, #fff 82%, transparent); max-width: 26ch; }
+.spot-card-actions { position: absolute; top: 14px; right: 14px; z-index: 2; display: flex; gap: 6px; }
 .spot-card-actions .icon-btn { background: color-mix(in srgb, #fff 55%, transparent); }
-.spot-maplink { position: relative; display: inline-block; margin-top: 12px; font-size: 12.5px; font-weight: 600; color: #fff; text-decoration: underline; }
+.spot-maplink { position: relative; z-index: 2; display: inline-block; margin-top: 12px; font-size: 12.5px; font-weight: 600; color: #fff; text-decoration: underline; }
 .spot-form { margin-top: 24px; }
 
 /* ---------- Footer / toast / empty / skeleton ---------- */
