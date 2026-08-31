@@ -662,14 +662,21 @@ async function loadRouteSummary(elId, queries) {
 
 let mapsJsPromise = null;
 function loadGoogleMapsJs() {
-  if (window.google && window.google.maps) return Promise.resolve();
+  if (window.google && window.google.maps && window.google.maps.Map) return Promise.resolve();
   if (!mapsApiKey) return Promise.reject(new Error('no maps key'));
   if (!mapsJsPromise) {
     mapsJsPromise = new Promise((resolve, reject) => {
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(mapsApiKey)}&loading=async`;
+      // No `loading=async` here on purpose: that param defers populating window.google.maps
+      // until you separately call google.maps.importLibrary(), so `new google.maps.Map(...)`
+      // right after onload would fail. This classic (no loading= param) form guarantees
+      // google.maps.* is fully ready by the time the script's onload fires.
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(mapsApiKey)}`;
       script.async = true;
-      script.onload = () => resolve();
+      script.onload = () => {
+        if (window.google && window.google.maps && window.google.maps.Map) resolve();
+        else reject(new Error('Google Maps JS loaded but google.maps.Map is missing'));
+      };
       script.onerror = () => { mapsJsPromise = null; reject(new Error('Google Maps JS 로드 실패')); };
       document.head.appendChild(script);
     });
@@ -677,9 +684,14 @@ function loadGoogleMapsJs() {
   return mapsJsPromise;
 }
 
+function showRouteMapError(container, message) {
+  if (!container || !container.isConnected) return;
+  container.innerHTML = `<p class="empty-hint">${esc(message)}</p>`;
+}
+
 // Renders an interactive map with the driving route + a numbered pin per stop (1, 2, 3...,
-// matching the stop list) into the given container. Fails silently on any error — the
-// plain-link fallback shown alongside it already covers the no-key/broken-key case.
+// matching the stop list) into the given container. On any failure, leaves a short message
+// in the container instead of a silent blank box, so a broken key/restriction is visible.
 async function renderNumberedRouteMap(containerId, stops) {
   const container = document.getElementById(containerId);
   if (!container || !mapsApiKey || stops.length < 2) return;
@@ -694,42 +706,56 @@ async function renderNumberedRouteMap(containerId, stops) {
 
   try {
     await loadGoogleMapsJs();
-  } catch (e) { return; }
+  } catch (e) {
+    console.error('Google Maps JS load failed:', e.message);
+    showRouteMapError(container, '지도를 불러오지 못했습니다. (Maps JavaScript API 설정을 확인해주세요)');
+    return;
+  }
   // Bail if the panel was re-rendered (container gone) or a newer call for this same
   // container has since taken over (stops changed again while we were loading).
   if (!container.isConnected || container.dataset.routeSignature !== signature) return;
 
-  const map = new google.maps.Map(container, { center: { lat: 13.75, lng: 100.6 }, zoom: 10 });
-  const directionsService = new google.maps.DirectionsService();
-  const directionsRenderer = new google.maps.DirectionsRenderer({ map, suppressMarkers: true });
-  const waypoints = stops.slice(1, -1).map((s) => ({ location: s.query, stopover: true }));
+  let map;
+  try {
+    map = new google.maps.Map(container, { center: { lat: 13.75, lng: 100.6 }, zoom: 10 });
+    const directionsService = new google.maps.DirectionsService();
+    const directionsRenderer = new google.maps.DirectionsRenderer({ map, suppressMarkers: true });
+    const waypoints = stops.slice(1, -1).map((s) => ({ location: s.query, stopover: true }));
 
-  directionsService.route({
-    origin: stops[0].query,
-    destination: stops[stops.length - 1].query,
-    waypoints,
-    travelMode: google.maps.TravelMode.DRIVING,
-  }, (result, status) => {
-    if (status !== google.maps.DirectionsStatus.OK) return;
-    if (!container.isConnected || container.dataset.routeSignature !== signature) return;
-    directionsRenderer.setDirections(result);
+    directionsService.route({
+      origin: stops[0].query,
+      destination: stops[stops.length - 1].query,
+      waypoints,
+      travelMode: google.maps.TravelMode.DRIVING,
+    }, (result, status) => {
+      if (!container.isConnected || container.dataset.routeSignature !== signature) return;
+      if (status !== google.maps.DirectionsStatus.OK) {
+        console.error('Directions request failed:', status);
+        showRouteMapError(container, `경로를 불러오지 못했습니다. (${status})`);
+        return;
+      }
+      directionsRenderer.setDirections(result);
 
-    const badgeColor = getComputedStyle(document.documentElement).getPropertyValue('--bl-700').trim() || '#3a6ea8';
-    const legs = result.routes[0].legs;
-    const points = [legs[0].start_location, ...legs.map((l) => l.end_location)];
-    points.forEach((pos, i) => {
-      new google.maps.Marker({
-        position: pos,
-        map,
-        title: stops[i] ? stops[i].title : '',
-        label: { text: String(i + 1), color: '#fff', fontWeight: '700', fontSize: '11px' },
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE, scale: 13,
-          fillColor: badgeColor, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2,
-        },
+      const badgeColor = getComputedStyle(document.documentElement).getPropertyValue('--bl-700').trim() || '#3a6ea8';
+      const legs = result.routes[0].legs;
+      const points = [legs[0].start_location, ...legs.map((l) => l.end_location)];
+      points.forEach((pos, i) => {
+        new google.maps.Marker({
+          position: pos,
+          map,
+          title: stops[i] ? stops[i].title : '',
+          label: { text: String(i + 1), color: '#fff', fontWeight: '700', fontSize: '11px' },
+          icon: {
+            path: google.maps.SymbolPath.CIRCLE, scale: 13,
+            fillColor: badgeColor, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2,
+          },
+        });
       });
     });
-  });
+  } catch (e) {
+    console.error('renderNumberedRouteMap failed:', e.message);
+    showRouteMapError(container, '지도를 표시하는 중 오류가 발생했습니다.');
+  }
 }
 
 function routeLocationFor(day) {
