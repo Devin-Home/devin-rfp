@@ -44,6 +44,27 @@ if (state.days.some((day) => day.events.length > 1)) {
   persist();
 }
 
+// Keep a handful of curated "가볼 곳"/"맛집" spots pointed at the family's chosen
+// photos (Pexels), so an already-seeded trip.json picks up the same images the
+// frontend showcase rows use, without needing a full re-seed.
+const CURATED_SPOT_IMAGES = {
+  '왓아룬': 'https://images.pexels.com/photos/35981272/pexels-photo-35981272.jpeg?auto=compress&cs=tinysrgb&w=900',
+  '왕궁 & 왓프라깨우': 'https://images.pexels.com/photos/38791407/pexels-photo-38791407.jpeg?auto=compress&cs=tinysrgb&w=900',
+  '진리의 성전': 'https://images.pexels.com/photos/4037038/pexels-photo-4037038.jpeg?auto=compress&cs=tinysrgb&w=900',
+  '아이콘시암': 'https://images.pexels.com/photos/28560920/pexels-photo-28560920.jpeg?auto=compress&cs=tinysrgb&w=900',
+  '카오산 로드': 'https://images.pexels.com/photos/35979665/pexels-photo-35979665.jpeg?auto=compress&cs=tinysrgb&w=900',
+  '쿤댕 꾸어이짭 유안': 'https://images.pexels.com/photos/30982066/pexels-photo-30982066.jpeg?auto=compress&cs=tinysrgb&w=800',
+  '엠쿼티어 헬릭스 푸드코트': 'https://images.pexels.com/photos/36817184/pexels-photo-36817184.jpeg?auto=compress&cs=tinysrgb&w=800',
+  '터미널21 파타야 푸드코트': 'https://images.pexels.com/photos/28381598/pexels-photo-28381598.jpeg?auto=compress&cs=tinysrgb&w=800',
+  '뿌펜 파타야': 'https://images.pexels.com/photos/31027042/pexels-photo-31027042.jpeg?auto=compress&cs=tinysrgb&w=800',
+};
+let curatedImagesChanged = false;
+state.spots.forEach((s) => {
+  const img = CURATED_SPOT_IMAGES[s.name];
+  if (img && s.image !== img) { s.image = img; curatedImagesChanged = true; }
+});
+if (curatedImagesChanged) persist();
+
 function nextId(kind) {
   const id = state.nextIds[kind];
   state.nextIds[kind] += 1;

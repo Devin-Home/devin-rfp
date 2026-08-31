@@ -29,27 +29,47 @@ const ICON_LABEL = {
 };
 const SPOT_CATEGORIES = ['방콕', '파타야'];
 
-function wmImg(filename, width) {
-  return `https://commons.wikimedia.org/wiki/Special:FilePath/${filename}?width=${width || 640}`;
-}
+// Curated Pexels photos (family-provided, free-to-use) for the magazine redesign.
+const TRAVEL_IMAGES = {
+  hero: 'https://images.pexels.com/photos/34405900/pexels-photo-34405900.jpeg?auto=compress&cs=tinysrgb&w=1920',
+  day1: 'https://images.pexels.com/photos/20889589/pexels-photo-20889589.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  day2: 'https://images.pexels.com/photos/36768902/pexels-photo-36768902.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  day3: 'https://images.pexels.com/photos/17704287/pexels-photo-17704287.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  day4: 'https://images.pexels.com/photos/15051535/pexels-photo-15051535.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  day5: 'https://images.pexels.com/photos/4577696/pexels-photo-4577696.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  day6: 'https://images.pexels.com/photos/2476632/pexels-photo-2476632.jpeg?auto=compress&cs=tinysrgb&w=1200',
+  watArun: 'https://images.pexels.com/photos/35981272/pexels-photo-35981272.jpeg?auto=compress&cs=tinysrgb&w=900',
+  grandPalace: 'https://images.pexels.com/photos/38791407/pexels-photo-38791407.jpeg?auto=compress&cs=tinysrgb&w=900',
+  sanctuary: 'https://images.pexels.com/photos/4037038/pexels-photo-4037038.jpeg?auto=compress&cs=tinysrgb&w=900',
+  bangkokCity: 'https://images.pexels.com/photos/34951439/pexels-photo-34951439.jpeg?auto=compress&cs=tinysrgb&w=900',
+  food1: 'https://images.pexels.com/photos/30982066/pexels-photo-30982066.jpeg?auto=compress&cs=tinysrgb&w=800',
+  food2: 'https://images.pexels.com/photos/36817184/pexels-photo-36817184.jpeg?auto=compress&cs=tinysrgb&w=800',
+  food3: 'https://images.pexels.com/photos/28381598/pexels-photo-28381598.jpeg?auto=compress&cs=tinysrgb&w=800',
+  food4: 'https://images.pexels.com/photos/31027042/pexels-photo-31027042.jpeg?auto=compress&cs=tinysrgb&w=800',
+  stayBangkok: 'https://images.pexels.com/photos/37836001/pexels-photo-37836001.jpeg?auto=compress&cs=tinysrgb&w=1000',
+  stayVilla: 'https://images.pexels.com/photos/4146874/pexels-photo-4146874.jpeg?auto=compress&cs=tinysrgb&w=1000',
+  shop1: 'https://images.pexels.com/photos/28560920/pexels-photo-28560920.jpeg?auto=compress&cs=tinysrgb&w=900',
+  shop2: 'https://images.pexels.com/photos/35979665/pexels-photo-35979665.jpeg?auto=compress&cs=tinysrgb&w=900',
+  footer: 'https://images.pexels.com/photos/34951439/pexels-photo-34951439.jpeg?auto=compress&cs=tinysrgb&w=1920',
+};
 // One representative photo per day, for the day-story cards & route map highlights.
 const DAY_PHOTOS = {
-  1: wmImg('Suvarnabhumi_Airport,_Arrival_Hall.JPG'),
-  2: wmImg('Grand_Palace_Bangkok_(Unsplash).jpg'),
-  3: wmImg('Thai-Night-market_wIMG_3912.jpg'),
-  4: wmImg('Pattaya_Floating_Market.JPG'),
-  5: wmImg('Sanctuary_of_Truth_Pattaya.jpg'),
-  6: wmImg('Koh_Samui_Luxury_Villa_Interior.jpg'),
-  7: wmImg('Pattaya_Bay_Panorama.jpg'),
-  8: wmImg('Iconsiam_shopping_mall.jpg'),
-  9: wmImg('Thai_Massage.jpg'),
+  1: TRAVEL_IMAGES.day1,
+  2: TRAVEL_IMAGES.day2,
+  3: TRAVEL_IMAGES.day3,
+  4: TRAVEL_IMAGES.day4,
+  5: TRAVEL_IMAGES.day5,
+  6: TRAVEL_IMAGES.day6,
+  7: TRAVEL_IMAGES.stayVilla,
+  8: TRAVEL_IMAGES.bangkokCity,
+  9: TRAVEL_IMAGES.shop1,
 };
 // Hotel-name → photo lookup, for the "머무는 곳" showcase row (hotels live on the day record, not in `spots`).
 const HOTEL_PHOTOS = {
-  '더 블레스 호텔 앤 레지던스': wmImg('Hotel_swimming_pool_in_Sukhumvit.jpg'),
-  '호텔 제이 파타야': wmImg('Waterfront_Suites_and_Residence_and_Pattaya_City_sign.jpg'),
-  '더 젬스 풀빌라': wmImg('Koh_Samui_Luxury_Villa_Interior.jpg'),
-  '호텔 뤼 드 시암': wmImg('Shangri-La_Hotel,_Bangkok.JPG'),
+  '더 블레스 호텔 앤 레지던스': TRAVEL_IMAGES.stayBangkok,
+  '호텔 제이 파타야': TRAVEL_IMAGES.stayVilla,
+  '더 젬스 풀빌라': TRAVEL_IMAGES.stayVilla,
+  '호텔 뤼 드 시암': TRAVEL_IMAGES.stayBangkok,
 };
 // Curated shopping spots pulled from the existing "가볼 곳" list, by name.
 const SHOP_SPOT_NAMES = ['아이콘시암', '카오산 로드', '조드페어스 야시장'];

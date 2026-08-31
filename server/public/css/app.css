@@ -630,10 +630,15 @@ figcaption .day { font-size: 12px; font-weight: 400; color: var(--ink-faint); wh
 
 /* ---------- Footer / toast / empty / skeleton ---------- */
 .app-footer {
-  margin-top: 40px; padding: 34px clamp(24px, 4vw, 44px); border-radius: var(--radius-xxl);
+  position: relative; overflow: hidden; margin-top: 40px; padding: 34px clamp(24px, 4vw, 44px); border-radius: var(--radius-xxl);
   background: linear-gradient(160deg, var(--ink-900) 0%, var(--ink-700) 100%); font-size: 13px; color: color-mix(in srgb, #fff 68%, transparent);
 }
-.footer-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; flex-wrap: wrap; padding-bottom: 22px; border-bottom: 1px solid color-mix(in srgb, #fff 16%, transparent); }
+.footer-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+.app-footer::before {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--ink-900) 93%, transparent) 0%, color-mix(in srgb, var(--ink-700) 88%, transparent) 100%);
+}
+.footer-top { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; flex-wrap: wrap; padding-bottom: 22px; border-bottom: 1px solid color-mix(in srgb, #fff 16%, transparent); }
 .footer-brand-block { display: flex; flex-direction: column; gap: 8px; max-width: 340px; }
 .footer-brand { display: flex; align-items: center; gap: 8px; font-family: var(--font-heading); font-size: 18px; color: #fff; }
 .footer-brand svg { color: var(--sand); }
@@ -645,7 +650,7 @@ figcaption .day { font-size: 12px; font-weight: 400; color: var(--ink-faint); wh
   transition: color .15s ease;
 }
 .footer-link:hover { color: var(--sand); }
-.footer-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding-top: 18px; }
+.footer-row { position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding-top: 18px; }
 .footer-meta { font-size: 11.5px; color: color-mix(in srgb, #fff 48%, transparent); }
 .empty-hint { color: var(--ink-faint); font-size: 13.5px; padding: 26px 20px; text-align: center; }
 
