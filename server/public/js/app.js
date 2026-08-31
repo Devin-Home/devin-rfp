@@ -90,8 +90,9 @@ async function loadConfig() {
     mapsApiKey = (cfg && cfg.mapsApiKey) || null;
   } catch (e) { mapsApiKey = null; }
   // loadConfig() runs concurrently with loadSpots()/loadDays() in init(), so an earlier
-  // render of the route map embed may have missed the key — re-render now that it's known.
+  // render of the route map/day panel may have missed the key — re-render now that it's known.
   renderRouteMapEmbed();
+  renderDayPanel();
 }
 
 function openMapModal(query, title) {
@@ -752,6 +753,38 @@ function renderDayRail() {
     </button>`).join('') + `<button type="button" class="day-rail-add" data-act="add-day">＋ 날짜 추가</button>`;
 }
 
+// Ordered stops for one day's own route: every event that has a location, in time
+// order, plus the day's hotel (if any) tacked on at the end.
+function dayRouteStops(day) {
+  const stops = (day.events || []).filter((ev) => ev.map_query).map((ev) => ({ query: ev.map_query, title: ev.name }));
+  if (day.hotel_map_query) stops.push({ query: day.hotel_map_query, title: day.hotel_name || '숙소' });
+  return stops;
+}
+
+function dayRouteCardHTML(day) {
+  const stops = dayRouteStops(day);
+  if (stops.length < 2) return '';
+  const queries = stops.map((s) => s.query);
+
+  let body;
+  if (mapsApiKey) {
+    const origin = queries[0];
+    const destination = queries[queries.length - 1];
+    const waypoints = queries.slice(1, -1).slice(0, 8);
+    const params = new URLSearchParams({ key: mapsApiKey, origin, destination, mode: 'driving' });
+    if (waypoints.length) params.set('waypoints', waypoints.join('|'));
+    body = `<div class="day-route-embed"><iframe src="https://www.google.com/maps/embed/v1/directions?${params.toString()}" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe></div>`;
+  } else {
+    const link = `https://www.google.com/maps/dir/${queries.map(encodeURIComponent).join('/')}`;
+    body = `<p class="day-route-fallback">실제 지도로 보려면 Google Maps API 키 설정이 필요해요. <a href="${link}" target="_blank" rel="noopener">Google 지도에서 이 날의 동선 보기 ↗</a></p>`;
+  }
+  return `
+    <div class="day-route-card">
+      <p class="card-kicker">Day ${day.day_number} 동선</p>
+      ${body}
+    </div>`;
+}
+
 function renderDayPanel() {
   const panel = document.getElementById('dayPanel');
   const day = days.find((d) => d.id === selectedDayId) || days[0];
@@ -767,6 +800,7 @@ function renderDayPanel() {
       ${(day.events || []).map((ev) => eventRowHTML(day, ev)).join('') || '<p class="empty-hint">아직 등록된 일정이 없습니다.</p>'}
     </div>
     ${newEventCardHTML(day)}
+    ${dayRouteCardHTML(day)}
     <div class="day-nav">
       <button class="btn btn-ghost" type="button" data-act="goto-day" data-id="${prevDay.id}">이전 날</button>
       <button class="btn btn-primary" type="button" data-act="goto-day" data-id="${nextDay.id}">다음 날</button>
