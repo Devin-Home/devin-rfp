@@ -89,6 +89,9 @@ async function loadConfig() {
     const cfg = await api.get('/api/config');
     mapsApiKey = (cfg && cfg.mapsApiKey) || null;
   } catch (e) { mapsApiKey = null; }
+  // loadConfig() runs concurrently with loadSpots()/loadDays() in init(), so an earlier
+  // render of the route map embed may have missed the key — re-render now that it's known.
+  renderRouteMapEmbed();
 }
 
 function openMapModal(query, title) {
@@ -656,6 +659,46 @@ function renderRouteMap() {
         <span class="route-highlight-sub">${s.day ? `Day ${s.day} · ` : ''}${esc(s.city || '')}</span>
       </span>
     </a>`).join('') || '<p class="empty-hint">가볼 곳을 추가하면 여기에 표시됩니다.</p>';
+
+  renderRouteMapEmbed();
+}
+
+// Real Google Maps route connecting each day's stop, in order — the Embed API's
+// "directions" mode when a Maps API key is configured, otherwise a plain
+// multi-stop Google Maps link (works with no key, same fallback pattern as
+// the rest of the app's map links).
+function renderRouteMapEmbed() {
+  const wrap = document.getElementById('routeMapEmbed');
+  const frame = document.getElementById('routeMapFrame');
+  const fallback = document.getElementById('routeMapFallback');
+  const fallbackLink = document.getElementById('routeMapFallbackLink');
+  if (!wrap || !frame) return;
+
+  const stops = days.map(routeLocationFor).filter(Boolean).map((l) => l.query);
+  if (stops.length < 2) {
+    wrap.hidden = true;
+    if (fallback) fallback.hidden = true;
+    return;
+  }
+
+  if (!mapsApiKey) {
+    wrap.hidden = true;
+    frame.src = '';
+    if (fallback) {
+      fallback.hidden = false;
+      if (fallbackLink) fallbackLink.href = `https://www.google.com/maps/dir/${stops.map(encodeURIComponent).join('/')}`;
+    }
+    return;
+  }
+
+  const origin = stops[0];
+  const destination = stops[stops.length - 1];
+  const waypoints = stops.slice(1, -1).slice(0, 8); // Embed API practical waypoint limit
+  const params = new URLSearchParams({ key: mapsApiKey, origin, destination, mode: 'driving' });
+  if (waypoints.length) params.set('waypoints', waypoints.join('|'));
+  frame.src = `https://www.google.com/maps/embed/v1/directions?${params.toString()}`;
+  wrap.hidden = false;
+  if (fallback) fallback.hidden = true;
 }
 
 /* ---------------- Food / Stay / Shop showcase rows ---------------- */
