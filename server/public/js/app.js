@@ -791,10 +791,41 @@ function dayRouteStops(day) {
   return stops;
 }
 
-function dayRouteStopsListHTML(stops) {
-  return `<ol class="day-route-stops">
-    ${stops.map((s, i) => `<li><span class="day-route-stop-num">${i + 1}</span><span class="day-route-stop-name">${esc(s.title)}</span></li>`).join('')}
-  </ol>`;
+function dayRouteStopsListHTML(stops, day) {
+  const items = stops.map((s, i) => {
+    const leg = i > 0 ? `<li class="day-route-leg" id="dayRouteLeg${day.id}-${i - 1}">→</li>` : '';
+    return `${leg}<li class="day-route-stop"><span class="day-route-stop-num">${i + 1}</span><span class="day-route-stop-name">${esc(s.title)}</span></li>`;
+  }).join('');
+  return `<ol class="day-route-stops">${items}</ol>`;
+}
+
+// Fetches both the per-leg (stop N → stop N+1) and total distance/time for one day's
+// route, and fills them into the stop-list connectors and the summary badge. Same
+// fail-silent behavior as loadRouteSummary — the embedded map still works without it.
+async function loadDayRouteLegs(day, queries) {
+  if (!mapsApiKey || queries.length < 2) return;
+  const origin = queries[0];
+  const destination = queries[queries.length - 1];
+  const waypoints = queries.slice(1, -1);
+  try {
+    const params = new URLSearchParams({ origin, destination });
+    if (waypoints.length) params.set('waypoints', waypoints.join('|'));
+    const data = await api.get(`/api/directions?${params.toString()}`);
+    if (Array.isArray(data && data.legs_detail)) {
+      data.legs_detail.forEach((leg, i) => {
+        const legEl = document.getElementById(`dayRouteLeg${day.id}-${i}`);
+        if (legEl && legEl.isConnected && leg.distance_km != null) {
+          legEl.textContent = `→ ${leg.distance_km}km · ${formatMinutes(leg.duration_min)}`;
+        }
+      });
+    }
+    const summaryEl = document.getElementById(`dayRouteSummary${day.id}`);
+    if (summaryEl && summaryEl.isConnected && data && data.distance_km != null) {
+      summaryEl.textContent = `🚗 총 이동거리 약 ${data.distance_km}km · ${formatMinutes(data.duration_min)}`;
+    }
+  } catch (e) {
+    // leave the stop list / summary blank
+  }
 }
 
 function dayRouteCardHTML(day) {
@@ -819,7 +850,7 @@ function dayRouteCardHTML(day) {
   return `
     <div class="day-route-card">
       <p class="card-kicker">Day ${day.day_number} 동선</p>
-      ${dayRouteStopsListHTML(stops)}
+      ${dayRouteStopsListHTML(stops, day)}
       ${body}
     </div>`;
 }
@@ -846,7 +877,7 @@ function renderDayPanel() {
     </div>`;
 
   const dayStops = dayRouteStops(day);
-  loadRouteSummary(`dayRouteSummary${day.id}`, dayStops.map((s) => s.query));
+  loadDayRouteLegs(day, dayStops.map((s) => s.query));
 }
 
 async function loadDays() {

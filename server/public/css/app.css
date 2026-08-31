@@ -526,17 +526,17 @@ select.form-input { appearance: none; background-image: none; }
 .event-expense-item .desc { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
 .event-expense-item .amount { font-weight: 700; }
 .day-route-card { background: var(--surface); border-radius: var(--radius-xl); padding: 22px 22px 20px; margin-top: 8px; margin-bottom: 24px; }
-.day-route-stops { list-style: none; margin: 0 0 18px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.day-route-stops li {
+.day-route-stops { list-style: none; margin: 0 0 18px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.day-route-stop {
   display: flex; align-items: center; gap: 7px; padding: 5px 13px 5px 5px; border-radius: 999px;
   background: var(--color-neutral-100); box-shadow: var(--shadow-sm); font-size: 12.5px; font-weight: 600; color: var(--ink);
 }
-.day-route-stops li:not(:first-child)::before { content: '→'; margin-right: 1px; color: var(--bl-500); font-weight: 700; }
 .day-route-stop-num {
   flex: none; width: 21px; height: 21px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
   background: linear-gradient(160deg, var(--bl-500), var(--bl-800)); color: #fff; font-size: 10.5px; font-family: var(--font-heading);
 }
 .day-route-stop-name { max-width: 22ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.day-route-leg { display: flex; align-items: center; padding: 0 1px; font-size: 11px; font-weight: 700; color: var(--bl-700); white-space: nowrap; }
 .day-route-embed { padding: 10px; border-radius: var(--radius-lg); background: var(--color-neutral-100); text-align: center; }
 .day-route-embed iframe { width: 100%; height: 300px; border: 1px solid var(--line); border-radius: var(--radius-md); display: block; }
 .day-route-summary, .route-map-summary {

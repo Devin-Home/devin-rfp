@@ -44,6 +44,12 @@ router.get('/', async (req, res) => {
       distance_km: Math.round((totalMeters / 1000) * 10) / 10,
       duration_min: Math.round(totalSeconds / 60),
       legs: legs.length,
+      // Per-leg breakdown (stop N → stop N+1), so the frontend can show distance/time
+      // between each pair of consecutive stops, not just the trip-wide total.
+      legs_detail: legs.map((l) => ({
+        distance_km: l.distance ? Math.round((l.distance.value / 1000) * 10) / 10 : null,
+        duration_min: l.duration ? Math.round(l.duration.value / 60) : null,
+      })),
     };
     cache.set(cacheKey, { data: result, updatedAt: now });
     res.json({ ...result, cached: false });
