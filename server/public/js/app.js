@@ -730,32 +730,63 @@ async function renderNumberedRouteMap(containerId, stops) {
     }, (result, status) => {
       if (!container.isConnected || container.dataset.routeSignature !== signature) return;
       if (status !== google.maps.DirectionsStatus.OK) {
-        console.error('Directions request failed:', status);
-        showRouteMapError(container, `경로를 불러오지 못했습니다. (${status})`);
+        // A day that includes an island stop (e.g. a boat-tour day) has no drivable
+        // route at all — ZERO_RESULTS here is expected, not a bug. Still show the
+        // numbered pins by geocoding each stop independently, just without a route line.
+        console.warn('Directions request failed, falling back to individual pins:', status);
+        renderGeocodedPins(map, stops, container, signature);
         return;
       }
       directionsRenderer.setDirections(result);
 
-      const badgeColor = getComputedStyle(document.documentElement).getPropertyValue('--bl-700').trim() || '#3a6ea8';
       const legs = result.routes[0].legs;
       const points = [legs[0].start_location, ...legs.map((l) => l.end_location)];
-      points.forEach((pos, i) => {
-        new google.maps.Marker({
-          position: pos,
-          map,
-          title: stops[i] ? stops[i].title : '',
-          label: { text: String(i + 1), color: '#fff', fontWeight: '700', fontSize: '11px' },
-          icon: {
-            path: google.maps.SymbolPath.CIRCLE, scale: 13,
-            fillColor: badgeColor, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2,
-          },
-        });
-      });
+      points.forEach((pos, i) => dropNumberedMarker(map, pos, i, stops[i]));
     });
   } catch (e) {
     console.error('renderNumberedRouteMap failed:', e.message);
     showRouteMapError(container, '지도를 표시하는 중 오류가 발생했습니다.');
   }
+}
+
+function dropNumberedMarker(map, position, index, stop) {
+  const badgeColor = getComputedStyle(document.documentElement).getPropertyValue('--bl-700').trim() || '#3a6ea8';
+  return new google.maps.Marker({
+    position,
+    map,
+    title: stop ? stop.title : '',
+    label: { text: String(index + 1), color: '#fff', fontWeight: '700', fontSize: '11px' },
+    icon: {
+      path: google.maps.SymbolPath.CIRCLE, scale: 13,
+      fillColor: badgeColor, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2,
+    },
+  });
+}
+
+// Fallback for when DirectionsService can't compute a connected route (most commonly a
+// day that includes an island/boat-only stop): geocode each stop on its own and drop a
+// numbered pin for it, so the map still shows all the day's locations even without a
+// route line connecting them.
+function renderGeocodedPins(map, stops, container, signature) {
+  const geocoder = new google.maps.Geocoder();
+  const bounds = new google.maps.LatLngBounds();
+  let pending = stops.length;
+  let placed = 0;
+  stops.forEach((s, i) => {
+    geocoder.geocode({ address: s.query }, (results, status) => {
+      pending -= 1;
+      if (container.isConnected && container.dataset.routeSignature === signature && status === 'OK' && results && results[0]) {
+        const pos = results[0].geometry.location;
+        dropNumberedMarker(map, pos, i, s);
+        bounds.extend(pos);
+        placed += 1;
+        map.fitBounds(bounds);
+      }
+      if (pending === 0 && placed === 0) {
+        showRouteMapError(container, '지도에 표시할 위치를 찾지 못했습니다.');
+      }
+    });
+  });
 }
 
 function routeLocationFor(day) {
