@@ -626,6 +626,35 @@ function renderDayStory() {
 
 /* ---------------- Route map (illustrated day-by-day route + highlights) ---------------- */
 
+function formatMinutes(min) {
+  if (min == null) return '';
+  if (min < 60) return `${min}분`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m ? `${h}시간 ${m}분` : `${h}시간`;
+}
+
+// Fetches the total driving distance/time for an ordered stop list (via the cached
+// /api/directions route) and fills it into the given element. Fails silently — the
+// embedded map itself already works without this, it's just a nice-to-have summary.
+async function loadRouteSummary(elId, queries) {
+  const el = document.getElementById(elId);
+  if (!el || !mapsApiKey || queries.length < 2) return;
+  const origin = queries[0];
+  const destination = queries[queries.length - 1];
+  const waypoints = queries.slice(1, -1);
+  try {
+    const params = new URLSearchParams({ origin, destination });
+    if (waypoints.length) params.set('waypoints', waypoints.join('|'));
+    const data = await api.get(`/api/directions?${params.toString()}`);
+    if (el.isConnected && data && data.distance_km != null) {
+      el.textContent = `총 이동거리 약 ${data.distance_km}km · ${formatMinutes(data.duration_min)}`;
+    }
+  } catch (e) {
+    // leave the summary blank
+  }
+}
+
 function routeLocationFor(day) {
   if (day.hotel_map_query) return { query: day.hotel_map_query, title: day.hotel_name || day.title };
   const firstEv = (day.events || []).find((ev) => ev.map_query);
@@ -700,6 +729,7 @@ function renderRouteMapEmbed() {
   frame.src = `https://www.google.com/maps/embed/v1/directions?${params.toString()}`;
   wrap.hidden = false;
   if (fallback) fallback.hidden = true;
+  loadRouteSummary('routeMapSummary', stops);
 }
 
 /* ---------------- Food / Stay / Shop showcase rows ---------------- */
@@ -761,6 +791,12 @@ function dayRouteStops(day) {
   return stops;
 }
 
+function dayRouteStopsListHTML(stops) {
+  return `<ol class="day-route-stops">
+    ${stops.map((s, i) => `<li><span class="day-route-stop-num">${i + 1}</span><span class="day-route-stop-name">${esc(s.title)}</span></li>`).join('')}
+  </ol>`;
+}
+
 function dayRouteCardHTML(day) {
   const stops = dayRouteStops(day);
   if (stops.length < 2) return '';
@@ -773,7 +809,9 @@ function dayRouteCardHTML(day) {
     const waypoints = queries.slice(1, -1).slice(0, 8);
     const params = new URLSearchParams({ key: mapsApiKey, origin, destination, mode: 'driving' });
     if (waypoints.length) params.set('waypoints', waypoints.join('|'));
-    body = `<div class="day-route-embed"><iframe src="https://www.google.com/maps/embed/v1/directions?${params.toString()}" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe></div>`;
+    body = `
+      <div class="day-route-embed"><iframe src="https://www.google.com/maps/embed/v1/directions?${params.toString()}" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe></div>
+      <p class="day-route-summary" id="dayRouteSummary${day.id}"></p>`;
   } else {
     const link = `https://www.google.com/maps/dir/${queries.map(encodeURIComponent).join('/')}`;
     body = `<p class="day-route-fallback">실제 지도로 보려면 Google Maps API 키 설정이 필요해요. <a href="${link}" target="_blank" rel="noopener">Google 지도에서 이 날의 동선 보기 ↗</a></p>`;
@@ -781,6 +819,7 @@ function dayRouteCardHTML(day) {
   return `
     <div class="day-route-card">
       <p class="card-kicker">Day ${day.day_number} 동선</p>
+      ${dayRouteStopsListHTML(stops)}
       ${body}
     </div>`;
 }
@@ -805,6 +844,9 @@ function renderDayPanel() {
       <button class="btn btn-ghost" type="button" data-act="goto-day" data-id="${prevDay.id}">이전 날</button>
       <button class="btn btn-primary" type="button" data-act="goto-day" data-id="${nextDay.id}">다음 날</button>
     </div>`;
+
+  const dayStops = dayRouteStops(day);
+  loadRouteSummary(`dayRouteSummary${day.id}`, dayStops.map((s) => s.query));
 }
 
 async function loadDays() {

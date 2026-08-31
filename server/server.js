@@ -14,6 +14,7 @@ const fxRoutes = require('./routes/fx');
 const weatherRoutes = require('./routes/weather');
 const spotsRoutes = require('./routes/spots');
 const configRoutes = require('./routes/config');
+const directionsRoutes = require('./routes/directions');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -40,6 +41,7 @@ app.use('/api/fx', requireAuth, fxRoutes);
 app.use('/api/weather', requireAuth, weatherRoutes);
 app.use('/api/spots', requireAuth, spotsRoutes);
 app.use('/api/config', requireAuth, configRoutes);
+app.use('/api/directions', requireAuth, directionsRoutes);
 app.use('/api', requireAuth, uploadsRoutes);
 app.use('/uploads', requireAuth, express.static(path.join(__dirname, 'uploads')));
 
