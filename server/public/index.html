@@ -52,21 +52,29 @@
     </div>
 
     <section class="hero" id="hero">
-      <svg class="hero-art" viewBox="0 0 200 132" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
-        <circle cx="136" cy="40" r="30" fill="var(--sand)" opacity=".5"/>
-        <circle cx="136" cy="40" r="18" fill="var(--sand)"/>
+      <svg class="hero-art" viewBox="0 0 240 132" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+        <circle cx="166" cy="40" r="34" fill="var(--sand)" opacity=".5"/>
+        <circle cx="166" cy="40" r="20" fill="var(--sand)"/>
         <g fill="var(--bl-800)">
-          <polygon points="14,126 76,126 66,100 24,100"/>
-          <polygon points="30,100 60,100 52,78 38,78"/>
-          <polygon points="41,78 51,78 46,60 44,60"/>
-          <circle cx="45" cy="57" r="2.4"/>
+          <polygon points="24,126 96,126 84,98 36,98"/>
+          <polygon points="42,98 78,98 68,74 52,74"/>
+          <polygon points="55,74 65,74 59,54 57,54"/>
+          <circle cx="58" cy="51" r="2.6"/>
+        </g>
+        <g fill="var(--bl-500)" opacity=".55">
+          <polygon points="4,126 34,126 27,110 11,110"/>
+          <polygon points="13,110 25,110 20,96 18,96"/>
         </g>
         <g fill="none" stroke="var(--bl-800)" stroke-linecap="round">
-          <path d="M156,130 C148,104 144,76 149,50" stroke-width="5"/>
-          <path d="M149,50 Q126,38 104,48" stroke-width="3.5"/>
-          <path d="M149,50 Q132,32 112,32" stroke-width="3.5"/>
-          <path d="M149,50 Q166,34 186,40" stroke-width="3.5"/>
-          <path d="M149,50 Q164,28 184,24" stroke-width="3.5"/>
+          <path d="M188,130 C179,102 175,72 181,44" stroke-width="5.5"/>
+          <path d="M181,44 Q155,31 130,42" stroke-width="3.5"/>
+          <path d="M181,44 Q163,24 141,24" stroke-width="3.5"/>
+          <path d="M181,44 Q200,26 222,32" stroke-width="3.5"/>
+          <path d="M181,44 Q198,20 220,15" stroke-width="3.5"/>
+        </g>
+        <g stroke="var(--bl-700)" stroke-width="2" stroke-linecap="round" fill="none" opacity=".55">
+          <path d="M14,22 q4,-4 8,0 q4,-4 8,0"/>
+          <path d="M204,12 q3.5,-3.5 7,0 q3.5,-3.5 7,0"/>
         </g>
       </svg>
       <svg class="hero-wave" viewBox="0 0 380 30" preserveAspectRatio="none" aria-hidden="true">
@@ -74,15 +82,52 @@
         <path d="M0,20 Q19,11 38,20 T76,20 T114,20 T152,20 T190,20 T228,20 T266,20 T304,20 T342,20 T380,20 L380,30 L0,30 Z" fill="var(--bl-500)" opacity=".6"/>
       </svg>
       <div class="hero-copy">
+        <p class="hero-kicker">조금 느리게, 조금 더 특별하게</p>
         <p class="hero-eyebrow"><span class="dot"></span> Family Trip · 8박 9일</p>
         <h1><span>방콕에서 파타야까지,</span><span class="accent">2027년 1월 26일 출발</span></h1>
         <p class="hero-sub">일정을 직접 고치고, 지출을 바트·원화로 기록하고, 참고 사진을 올리는 일행 전용 화면입니다.</p>
-        <span class="dday-badge"><span class="num" id="ddayNum">D-?</span><span class="lbl">출발까지</span></span>
+        <div class="hero-cta-row">
+          <button class="hero-cta" type="button" id="heroCtaBtn">일정 보러 가기 →</button>
+          <span class="dday-badge"><span class="num" id="ddayNum">D-?</span><span class="lbl">출발까지</span></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="feature-row">
+      <div class="feature-item">
+        <span class="feature-icon"><svg width="24" height="24"><use href="#i-temple"/></svg></span>
+        <span class="feature-text"><span class="feature-label">사원 & 올드타운</span><span class="feature-sub">왕궁, 왓아룬이 있는 방콕의 오랜 이야기</span></span>
+      </div>
+      <div class="feature-item">
+        <span class="feature-icon"><svg width="24" height="24"><use href="#i-droplet"/></svg></span>
+        <span class="feature-text"><span class="feature-label">해변 & 물놀이</span><span class="feature-sub">파타야 해변과 풀빌라에서 보내는 여유</span></span>
+      </div>
+      <div class="feature-item">
+        <span class="feature-icon"><svg width="24" height="24"><use href="#i-meal"/></svg></span>
+        <span class="feature-text"><span class="feature-label">로컬 맛집</span><span class="feature-sub">길거리 음식부터 씨푸드까지</span></span>
+      </div>
+      <div class="feature-item">
+        <span class="feature-icon"><svg width="24" height="24"><use href="#i-suitcase"/></svg></span>
+        <span class="feature-text"><span class="feature-label">가족 여행</span><span class="feature-sub">8박 9일, 온 가족이 함께</span></span>
       </div>
     </section>
 
     <main>
       <section class="view active" id="view-itinerary">
+        <div class="day-story">
+          <div class="day-story-head">
+            <div>
+              <p class="section-eyebrow">YOUR JOURNEY</p>
+              <h2 class="section-title">하루하루가 더 특별한,<br>9일의 이야기</h2>
+            </div>
+            <div class="day-story-arrows">
+              <button class="story-arrow" type="button" id="dayStoryPrev" aria-label="이전 카드">←</button>
+              <button class="story-arrow" type="button" id="dayStoryNext" aria-label="다음 카드">→</button>
+            </div>
+          </div>
+          <div class="day-story-track" id="dayStoryTrack"></div>
+        </div>
+
         <div class="itin-layout">
           <div class="day-rail" id="dayRail">
             <div class="skeleton-card" style="height:56px;"></div>
@@ -206,7 +251,18 @@
       </section>
     </main>
 
-    <footer class="app-footer">방콕 · 파타야 트립 · 2027.01.26 – 02.03 · 일행 전용</footer>
+    <section class="cta-banner">
+      <p class="cta-banner-script">Better Trip, Brighter Memories</p>
+      <h2 class="cta-banner-title"><span>이제, 방콕에서</span><span>더 특별한 이야기가 시작됩니다</span></h2>
+      <button class="cta-banner-btn" type="button" id="ctaBannerBtn">사진으로 기록하기 →</button>
+    </section>
+
+    <footer class="app-footer">
+      <div class="footer-row">
+        <span class="footer-brand"><svg width="18" height="18"><use href="#i-globe"/></svg> 방콕 · 파타야</span>
+        <span class="footer-meta">2027.01.26 – 02.03 · 일행 전용</span>
+      </div>
+    </footer>
   </div>
 
   <div class="lightbox" id="lightbox"><img id="lightboxImg" alt=""></div>

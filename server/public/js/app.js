@@ -92,6 +92,16 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
   window.location.href = '/login.html';
 });
 
+/* ---------- Hero / closing banner CTAs ---------- */
+document.getElementById('heroCtaBtn').addEventListener('click', () => {
+  document.querySelector('.tab[data-view="itinerary"]').click();
+  document.querySelector('.itin-layout').scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+document.getElementById('ctaBannerBtn').addEventListener('click', () => {
+  document.querySelector('.tab[data-view="gallery"]').click();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
 /* ---------------- Thailand clock ---------------- */
 function updateThailandClock() {
   const el = document.getElementById('thClock');
@@ -487,6 +497,29 @@ function newEventCardHTML(day) {
   return `<div class="new-event-card"><p class="card-kicker">Day ${day.day_number} 일정 추가</p>${eventFormHTML(day.id, null)}</div>`;
 }
 
+function renderDayStory() {
+  const track = document.getElementById('dayStoryTrack');
+  if (!track) return;
+  track.innerHTML = days.map((d, i) => {
+    const firstEv = (d.events || [])[0];
+    const tag2 = d.hotel_name ? '숙소 이동' : (firstEv ? (TYPE_LABEL[firstEv.type] || '일정') : '자유일정');
+    return `
+      <button type="button" class="day-story-card ${d.id === selectedDayId ? 'active' : ''}" data-bg="${(i % 3) + 1}" data-act="story-select" data-id="${d.id}">
+        <span class="bg"></span>
+        <span class="content">
+          <span class="tag-eyebrow">DAY ${d.day_number}</span>
+          <span class="title">${esc(d.title)}</span>
+          <span class="pills"><span class="pill">${esc(CITY_LABEL[d.city] || d.city)}</span><span class="pill">${esc(tag2)}</span></span>
+        </span>
+      </button>`;
+  }).join('');
+}
+
+const dayStoryPrevBtn = document.getElementById('dayStoryPrev');
+const dayStoryNextBtn = document.getElementById('dayStoryNext');
+if (dayStoryPrevBtn) dayStoryPrevBtn.addEventListener('click', () => document.getElementById('dayStoryTrack').scrollBy({ left: -480, behavior: 'smooth' }));
+if (dayStoryNextBtn) dayStoryNextBtn.addEventListener('click', () => document.getElementById('dayStoryTrack').scrollBy({ left: 480, behavior: 'smooth' }));
+
 function renderDayRail() {
   const rail = document.getElementById('dayRail');
   rail.innerHTML = days.map((d) => `
@@ -527,6 +560,7 @@ async function loadDays() {
   }
   renderDayRail();
   renderDayPanel();
+  renderDayStory();
   populateDaySelect();
   updateDday();
 }
@@ -560,15 +594,16 @@ itinView.addEventListener('click', async (e) => {
   const act = btn.dataset.act;
   const id = btn.dataset.id ? Number(btn.dataset.id) : null;
 
-  if (act === 'select-day' || act === 'goto-day') {
+  if (act === 'select-day' || act === 'goto-day' || act === 'story-select') {
     selectedDayId = id;
     resetItinFormState();
-    renderDayRail(); renderDayPanel();
+    renderDayRail(); renderDayPanel(); renderDayStory();
+    if (act === 'story-select') document.querySelector('.itin-layout').scrollIntoView({ behavior: 'smooth', block: 'start' });
   } else if (act === 'add-day') {
     const day = await api.post('/api/days', { title: '새 날짜', city: 'bkk', date: '' });
     await loadDays();
     selectedDayId = day.id; editingDayId = day.id;
-    renderDayRail(); renderDayPanel();
+    renderDayRail(); renderDayPanel(); renderDayStory();
     toast('날짜를 추가했습니다');
   } else if (act === 'edit-day') {
     editingDayId = editingDayId === id ? null : id;
