@@ -634,27 +634,6 @@ function formatMinutes(min) {
   return m ? `${h}시간 ${m}분` : `${h}시간`;
 }
 
-// Fetches the total driving distance/time for an ordered stop list (via the cached
-// /api/directions route) and fills it into the given element. Fails silently — the
-// embedded map itself already works without this, it's just a nice-to-have summary.
-async function loadRouteSummary(elId, queries) {
-  const el = document.getElementById(elId);
-  if (!el || !mapsApiKey || queries.length < 2) return;
-  const origin = queries[0];
-  const destination = queries[queries.length - 1];
-  const waypoints = queries.slice(1, -1);
-  try {
-    const params = new URLSearchParams({ origin, destination });
-    if (waypoints.length) params.set('waypoints', waypoints.join('|'));
-    const data = await api.get(`/api/directions?${params.toString()}`);
-    if (el.isConnected && data && data.distance_km != null) {
-      el.textContent = `🚗 총 이동거리 약 ${data.distance_km}km · ${formatMinutes(data.duration_min)}`;
-    }
-  } catch (e) {
-    // leave the summary blank
-  }
-}
-
 /* ---------------- Google Maps JS API (interactive route map w/ numbered pins) ----------------
  * The Embed API (plain iframe, used elsewhere for single-place links) can't customize its
  * markers, so route maps use the JS API instead: we render our own map + DirectionsRenderer
@@ -689,17 +668,63 @@ function showRouteMapError(container, message) {
   container.innerHTML = `<p class="empty-hint">${esc(message)}</p>`;
 }
 
+function dropNumberedMarker(map, infoWindow, position, index, stop) {
+  const badgeColor = getComputedStyle(document.documentElement).getPropertyValue('--bl-700').trim() || '#3a6ea8';
+  const marker = new google.maps.Marker({
+    position,
+    map,
+    title: stop ? stop.title : '',
+    label: { text: String(index + 1), color: '#fff', fontWeight: '700', fontSize: '11px' },
+    icon: {
+      path: google.maps.SymbolPath.CIRCLE, scale: 13,
+      fillColor: badgeColor, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2,
+    },
+  });
+  if (stop && stop.title) {
+    marker.addListener('click', () => {
+      infoWindow.setContent(`<strong>${index + 1}. ${esc(stop.title)}</strong>`);
+      infoWindow.open({ map, anchor: marker });
+    });
+  }
+  return marker;
+}
+
+// Fills the per-leg ("stop N → stop N+1") and total distance/time text into the stop
+// list and summary badge, straight from the DirectionsResult legs we already have —
+// no extra API call needed (and no separate "Directions API" REST product to enable).
+function applyLegSummaries(legs, opts) {
+  let totalMeters = 0;
+  let totalSeconds = 0;
+  legs.forEach((l, i) => {
+    const meters = (l.distance && l.distance.value) || 0;
+    const seconds = (l.duration && l.duration.value) || 0;
+    totalMeters += meters;
+    totalSeconds += seconds;
+    if (opts.legIdPrefix) {
+      const legEl = document.getElementById(`${opts.legIdPrefix}-${i}`);
+      if (legEl) legEl.textContent = `→ ${Math.round((meters / 1000) * 10) / 10}km · ${formatMinutes(Math.round(seconds / 60))}`;
+    }
+  });
+  if (opts.summaryElId) {
+    const summaryEl = document.getElementById(opts.summaryElId);
+    if (summaryEl) summaryEl.textContent = `🚗 총 이동거리 약 ${Math.round((totalMeters / 1000) * 10) / 10}km · ${formatMinutes(Math.round(totalSeconds / 60))}`;
+  }
+}
+
 // Renders an interactive map with the driving route + a numbered pin per stop (1, 2, 3...,
-// matching the stop list) into the given container. On any failure, leaves a short message
-// in the container instead of a silent blank box, so a broken key/restriction is visible.
-async function renderNumberedRouteMap(containerId, stops) {
+// matching the stop list) into the given container, and (when opts.summaryElId/legIdPrefix
+// are given) fills in the distance/time text next to it. On any failure, leaves a short
+// message in the container instead of a silent blank box, so a broken key/restriction is
+// visible; `opts` is optional.
+async function renderNumberedRouteMap(containerId, stops, opts) {
+  opts = opts || {};
   const container = document.getElementById(containerId);
   if (!container || !mapsApiKey || stops.length < 2) return;
 
   // init() kicks off several loaders concurrently (loadDays/loadSpots/loadConfig), and
   // more than one of them can end up calling back into this same container once the
-  // Maps key is known. Skip re-rendering (and re-billing the Directions API) when the
-  // stop list hasn't actually changed since the last call.
+  // Maps key is known. Skip re-rendering (and re-issuing the Directions request) when
+  // the stop list hasn't actually changed since the last call.
   const signature = stops.map((s) => s.query).join('|');
   if (container.dataset.routeSignature === signature) return;
   container.dataset.routeSignature = signature;
@@ -718,6 +743,7 @@ async function renderNumberedRouteMap(containerId, stops) {
   let map;
   try {
     map = new google.maps.Map(container, { center: { lat: 13.75, lng: 100.6 }, zoom: 10 });
+    const infoWindow = new google.maps.InfoWindow();
     const directionsService = new google.maps.DirectionsService();
     const directionsRenderer = new google.maps.DirectionsRenderer({ map, suppressMarkers: true });
     const waypoints = stops.slice(1, -1).map((s) => ({ location: s.query, stopover: true }));
@@ -732,16 +758,18 @@ async function renderNumberedRouteMap(containerId, stops) {
       if (status !== google.maps.DirectionsStatus.OK) {
         // A day that includes an island stop (e.g. a boat-tour day) has no drivable
         // route at all — ZERO_RESULTS here is expected, not a bug. Still show the
-        // numbered pins by geocoding each stop independently, just without a route line.
+        // numbered pins by geocoding each stop independently, just without a route line
+        // (and without a distance/time summary — there's no route to measure).
         console.warn('Directions request failed, falling back to individual pins:', status);
-        renderGeocodedPins(map, stops, container, signature);
+        renderGeocodedPins(map, infoWindow, stops, container, signature);
         return;
       }
       directionsRenderer.setDirections(result);
 
       const legs = result.routes[0].legs;
       const points = [legs[0].start_location, ...legs.map((l) => l.end_location)];
-      points.forEach((pos, i) => dropNumberedMarker(map, pos, i, stops[i]));
+      points.forEach((pos, i) => dropNumberedMarker(map, infoWindow, pos, i, stops[i]));
+      applyLegSummaries(legs, opts);
     });
   } catch (e) {
     console.error('renderNumberedRouteMap failed:', e.message);
@@ -749,25 +777,11 @@ async function renderNumberedRouteMap(containerId, stops) {
   }
 }
 
-function dropNumberedMarker(map, position, index, stop) {
-  const badgeColor = getComputedStyle(document.documentElement).getPropertyValue('--bl-700').trim() || '#3a6ea8';
-  return new google.maps.Marker({
-    position,
-    map,
-    title: stop ? stop.title : '',
-    label: { text: String(index + 1), color: '#fff', fontWeight: '700', fontSize: '11px' },
-    icon: {
-      path: google.maps.SymbolPath.CIRCLE, scale: 13,
-      fillColor: badgeColor, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2,
-    },
-  });
-}
-
 // Fallback for when DirectionsService can't compute a connected route (most commonly a
 // day that includes an island/boat-only stop): geocode each stop on its own and drop a
 // numbered pin for it, so the map still shows all the day's locations even without a
 // route line connecting them.
-function renderGeocodedPins(map, stops, container, signature) {
+function renderGeocodedPins(map, infoWindow, stops, container, signature) {
   const geocoder = new google.maps.Geocoder();
   const bounds = new google.maps.LatLngBounds();
   let pending = stops.length;
@@ -777,7 +791,7 @@ function renderGeocodedPins(map, stops, container, signature) {
       pending -= 1;
       if (container.isConnected && container.dataset.routeSignature === signature && status === 'OK' && results && results[0]) {
         const pos = results[0].geometry.location;
-        dropNumberedMarker(map, pos, i, s);
+        dropNumberedMarker(map, infoWindow, pos, i, s);
         bounds.extend(pos);
         placed += 1;
         map.fitBounds(bounds);
@@ -856,8 +870,7 @@ function renderRouteMapEmbed() {
 
   wrap.hidden = false;
   if (fallback) fallback.hidden = true;
-  renderNumberedRouteMap('routeMapCanvas', stops);
-  loadRouteSummary('routeMapSummary', stops.map((s) => s.query));
+  renderNumberedRouteMap('routeMapCanvas', stops, { summaryElId: 'routeMapSummary' });
 }
 
 /* ---------------- Food / Stay / Shop showcase rows ---------------- */
@@ -927,35 +940,6 @@ function dayRouteStopsListHTML(stops, day) {
   return `<ol class="day-route-stops">${items}</ol>`;
 }
 
-// Fetches both the per-leg (stop N → stop N+1) and total distance/time for one day's
-// route, and fills them into the stop-list connectors and the summary badge. Same
-// fail-silent behavior as loadRouteSummary — the embedded map still works without it.
-async function loadDayRouteLegs(day, queries) {
-  if (!mapsApiKey || queries.length < 2) return;
-  const origin = queries[0];
-  const destination = queries[queries.length - 1];
-  const waypoints = queries.slice(1, -1);
-  try {
-    const params = new URLSearchParams({ origin, destination });
-    if (waypoints.length) params.set('waypoints', waypoints.join('|'));
-    const data = await api.get(`/api/directions?${params.toString()}`);
-    if (Array.isArray(data && data.legs_detail)) {
-      data.legs_detail.forEach((leg, i) => {
-        const legEl = document.getElementById(`dayRouteLeg${day.id}-${i}`);
-        if (legEl && legEl.isConnected && leg.distance_km != null) {
-          legEl.textContent = `→ ${leg.distance_km}km · ${formatMinutes(leg.duration_min)}`;
-        }
-      });
-    }
-    const summaryEl = document.getElementById(`dayRouteSummary${day.id}`);
-    if (summaryEl && summaryEl.isConnected && data && data.distance_km != null) {
-      summaryEl.textContent = `🚗 총 이동거리 약 ${data.distance_km}km · ${formatMinutes(data.duration_min)}`;
-    }
-  } catch (e) {
-    // leave the stop list / summary blank
-  }
-}
-
 function dayRouteCardHTML(day) {
   const stops = dayRouteStops(day);
   if (stops.length < 2) return '';
@@ -1000,8 +984,12 @@ function renderDayPanel() {
     </div>`;
 
   const dayStops = dayRouteStops(day);
-  if (mapsApiKey) renderNumberedRouteMap(`dayRouteCanvas${day.id}`, dayStops);
-  loadDayRouteLegs(day, dayStops.map((s) => s.query));
+  if (mapsApiKey) {
+    renderNumberedRouteMap(`dayRouteCanvas${day.id}`, dayStops, {
+      summaryElId: `dayRouteSummary${day.id}`,
+      legIdPrefix: `dayRouteLeg${day.id}`,
+    });
+  }
 }
 
 async function loadDays() {
