@@ -130,6 +130,11 @@ input, select, textarea { font: inherit; color: inherit; }
 .brand-sea { fill: var(--bl-500); opacity: .8; }
 
 /* ---------- Auth page ---------- */
+body.auth-page {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--ink-900) 55%, transparent) 0%, color-mix(in srgb, var(--ink-900) 78%, transparent) 100%),
+    url('https://images.pexels.com/photos/34405900/pexels-photo-34405900.jpeg?auto=compress&cs=tinysrgb&w=1600') center / cover no-repeat;
+}
 .auth-wrap { min-height: 100%; display: flex; align-items: center; justify-content: center; padding: 24px; }
 .auth-card {
   width: 100%; max-width: 380px; background: var(--color-neutral-100); border: 1px solid var(--line);
