@@ -648,7 +648,7 @@ async function loadRouteSummary(elId, queries) {
     if (waypoints.length) params.set('waypoints', waypoints.join('|'));
     const data = await api.get(`/api/directions?${params.toString()}`);
     if (el.isConnected && data && data.distance_km != null) {
-      el.textContent = `총 이동거리 약 ${data.distance_km}km · ${formatMinutes(data.duration_min)}`;
+      el.textContent = `🚗 총 이동거리 약 ${data.distance_km}km · ${formatMinutes(data.duration_min)}`;
     }
   } catch (e) {
     // leave the summary blank
