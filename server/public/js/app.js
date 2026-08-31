@@ -35,6 +35,52 @@ function esc(s) {
 function mapLink(q) {
   return q ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}` : '';
 }
+
+/* ---------------- Map modal (Google Maps Embed API) ---------------- */
+
+let mapsApiKey = null;
+async function loadConfig() {
+  try {
+    const cfg = await api.get('/api/config');
+    mapsApiKey = (cfg && cfg.mapsApiKey) || null;
+  } catch (e) { mapsApiKey = null; }
+}
+
+function openMapModal(query, title) {
+  const modal = document.getElementById('mapModal');
+  const frame = document.getElementById('mapModalFrame');
+  const titleEl = document.getElementById('mapModalTitle');
+  const extLink = document.getElementById('mapModalExternal');
+  if (!modal || !frame || !mapsApiKey) return;
+  frame.src = `https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(mapsApiKey)}&q=${encodeURIComponent(query)}`;
+  if (titleEl) titleEl.textContent = title || query;
+  if (extLink) extLink.href = mapLink(query);
+  modal.classList.add('open');
+}
+function closeMapModal() {
+  const modal = document.getElementById('mapModal');
+  const frame = document.getElementById('mapModalFrame');
+  if (modal) modal.classList.remove('open');
+  if (frame) frame.src = ''; // stop the embed loading once hidden
+}
+document.getElementById('mapModalClose')?.addEventListener('click', closeMapModal);
+document.getElementById('mapModal')?.addEventListener('click', (e) => {
+  if (e.target.id === 'mapModal') closeMapModal();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeMapModal();
+});
+// Intercept clicks on any "지도" link and open the modal instead, but only once a
+// Maps API key is configured — until then these links keep their old behavior
+// (open Google Maps search in a new tab).
+document.body.addEventListener('click', (e) => {
+  const link = e.target.closest('.js-map-link');
+  if (!link || !mapsApiKey) return;
+  const query = link.dataset.mapQuery;
+  if (!query) return;
+  e.preventDefault();
+  openMapModal(query, link.dataset.mapTitle || query);
+});
 function bahtStr(n) { return '฿' + Math.round(n).toLocaleString('en-US'); }
 function fmtDateShort(date) {
   if (!date) return '날짜 미정';
@@ -196,7 +242,7 @@ function spotCardHTML(p) {
       <span class="spot-eyebrow">${p.day ? `Day ${p.day} · ` : ''}${esc(p.city || '')}</span>
       <span class="spot-name">${esc(p.name)}</span>
       ${p.note ? `<span class="spot-note">${esc(p.note)}</span>` : ''}
-      ${p.map_query ? `<a class="spot-maplink" href="${mapLink(p.map_query)}" target="_blank" rel="noopener">📍 지도 보기</a>` : ''}
+      ${p.map_query ? `<a class="spot-maplink js-map-link" href="${mapLink(p.map_query)}" target="_blank" rel="noopener" data-map-query="${esc(p.map_query)}" data-map-title="${esc(p.name)}">📍 지도 보기</a>` : ''}
     </div>`;
 }
 
@@ -394,7 +440,7 @@ function eventRowHTML(day, ev) {
           <span class="event-tag">${TYPE_LABEL[ev.type] || '일정'}</span>
         </div>
         ${ev.desc ? `<span class="event-desc">${esc(ev.desc)}</span>` : ''}
-        ${ev.map_query ? `<a class="maplink" href="${mapLink(ev.map_query)}" target="_blank" rel="noopener">지도에서 보기</a>` : ''}
+        ${ev.map_query ? `<a class="maplink js-map-link" href="${mapLink(ev.map_query)}" target="_blank" rel="noopener" data-map-query="${esc(ev.map_query)}" data-map-title="${esc(ev.name)}">지도에서 보기</a>` : ''}
         ${memoBlockHTML(day, ev)}
         <div class="event-actions">
           <button class="btn-xs" type="button" data-act="${addingExpenseFor === ev.id ? 'cancel-event-expense' : 'add-event-expense'}" data-id="${ev.id}">${addingExpenseFor === ev.id ? '취소' : '비용 추가'}</button>
@@ -442,7 +488,7 @@ function hotelCardHTML(day) {
       ${day.hotel_note ? `<p class="note">${esc(day.hotel_note)}</p>` : ''}
       ${day.hotel_addr ? `<p class="addr">${esc(day.hotel_addr)}</p>` : ''}
       ${(day.hotel_map_query || day.hotel_website) ? `<p class="links">
-        ${day.hotel_map_query ? `<a href="${mapLink(day.hotel_map_query)}" target="_blank" rel="noopener">지도 열기</a>` : ''}
+        ${day.hotel_map_query ? `<a class="js-map-link" href="${mapLink(day.hotel_map_query)}" target="_blank" rel="noopener" data-map-query="${esc(day.hotel_map_query)}" data-map-title="${esc(day.hotel_name)}">지도 열기</a>` : ''}
         ${day.hotel_website ? `<a href="${esc(day.hotel_website)}" target="_blank" rel="noopener">호텔 사이트</a>` : ''}
       </p>` : ''}
     </div>`;
@@ -1045,7 +1091,7 @@ lightbox.addEventListener('click', () => lightbox.classList.remove('open'));
     updateAmountLabel();
     updateConvertHint();
     await loadDays();
-    await Promise.all([loadExpenses(), loadImages(), loadWeather(), loadSpots()]);
+    await Promise.all([loadExpenses(), loadImages(), loadWeather(), loadSpots(), loadConfig()]);
     if (!localStorage.getItem('krwPerThb')) fetchTodayFx(false); // first-ever visit: seed a real rate instead of the 41 fallback
   } catch (err) {
     console.error('init failed:', err);

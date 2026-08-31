@@ -266,6 +266,20 @@
   </div>
 
   <div class="lightbox" id="lightbox"><img id="lightboxImg" alt=""></div>
+
+  <div class="map-modal" id="mapModal">
+    <div class="map-modal-card">
+      <div class="map-modal-head">
+        <span class="map-modal-title" id="mapModalTitle"></span>
+        <button class="icon-btn sm" id="mapModalClose" type="button" title="닫기">✕</button>
+      </div>
+      <iframe id="mapModalFrame" src="" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
+      <div class="map-modal-foot">
+        <a id="mapModalExternal" href="#" target="_blank" rel="noopener">Google 지도 앱에서 열기 ↗</a>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script src="/js/api.js"></script>
