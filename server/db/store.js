@@ -65,6 +65,20 @@ state.spots.forEach((s) => {
 });
 if (curatedImagesChanged) persist();
 
+// Fix a bad hotel_map_query value from the original seed data: "The Gems Mining Pool
+// Villas Pattaya" has a stray "Mining" that Google can't resolve to a real place, which
+// makes any route through that day return ZERO_RESULTS. Same live-data-reconciliation
+// pattern as CURATED_SPOT_IMAGES above, keyed by hotel_name.
+const HOTEL_MAP_QUERY_FIXES = {
+  '더 젬스 풀빌라': 'The Gems Pool Villas Pattaya',
+};
+let hotelQueryChanged = false;
+state.days.forEach((day) => {
+  const fixed = HOTEL_MAP_QUERY_FIXES[day.hotel_name];
+  if (fixed && day.hotel_map_query !== fixed) { day.hotel_map_query = fixed; hotelQueryChanged = true; }
+});
+if (hotelQueryChanged) persist();
+
 function nextId(kind) {
   const id = state.nextIds[kind];
   state.nextIds[kind] += 1;

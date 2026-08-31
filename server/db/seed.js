@@ -74,7 +74,7 @@ const seedDays = (function seedDays() {
       day_number: 6, date: '2027-01-31', title: '풀빌라 이동 & 온종일 물놀이', city: 'pty', icon: 'droplet',
       hotel_name: '더 젬스 풀빌라', hotel_addr: '888 Moo 1, Nong Prue, Banglamung, Chonburi',
       hotel_note: '방콕-파타야 고속도로 접근 용이. 풀빌라 정문 앞 한식당 있음. (1/31~2/1, 2박)',
-      hotel_map_query: 'The Gems Mining Pool Villas Pattaya', hotel_website: 'https://thegemspattaya.com/',
+      hotel_map_query: 'The Gems Pool Villas Pattaya', hotel_website: 'https://thegemspattaya.com/',
       events: [
         { time: '10:00', type: 'activity', name: '호텔 제이 체크아웃' },
         { time: '10:30', type: 'activity', name: '더 젬스 풀빌라 체크인', desc: '외출 없이 그랩 배달로 끼니 해결, 온전히 휴식.' },
