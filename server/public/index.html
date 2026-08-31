@@ -34,6 +34,7 @@
   </svg>
 
   <div class="page">
+    <p class="topbar-kicker">FAMILY TRAVEL JOURNAL · VOL. 01 — BANGKOK &amp; PATTAYA</p>
     <nav class="topbar">
       <span class="brand"><svg width="27" height="27"><use href="#i-globe"/></svg> 방콕 · 파타야</span>
       <div class="tabs" id="tabs">
@@ -52,35 +53,7 @@
     </div>
 
     <section class="hero" id="hero">
-      <svg class="hero-art" viewBox="0 0 240 132" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
-        <circle cx="166" cy="40" r="34" fill="var(--sand)" opacity=".5"/>
-        <circle cx="166" cy="40" r="20" fill="var(--sand)"/>
-        <g fill="var(--bl-800)">
-          <polygon points="24,126 96,126 84,98 36,98"/>
-          <polygon points="42,98 78,98 68,74 52,74"/>
-          <polygon points="55,74 65,74 59,54 57,54"/>
-          <circle cx="58" cy="51" r="2.6"/>
-        </g>
-        <g fill="var(--bl-500)" opacity=".55">
-          <polygon points="4,126 34,126 27,110 11,110"/>
-          <polygon points="13,110 25,110 20,96 18,96"/>
-        </g>
-        <g fill="none" stroke="var(--bl-800)" stroke-linecap="round">
-          <path d="M188,130 C179,102 175,72 181,44" stroke-width="5.5"/>
-          <path d="M181,44 Q155,31 130,42" stroke-width="3.5"/>
-          <path d="M181,44 Q163,24 141,24" stroke-width="3.5"/>
-          <path d="M181,44 Q200,26 222,32" stroke-width="3.5"/>
-          <path d="M181,44 Q198,20 220,15" stroke-width="3.5"/>
-        </g>
-        <g stroke="var(--bl-700)" stroke-width="2" stroke-linecap="round" fill="none" opacity=".55">
-          <path d="M14,22 q4,-4 8,0 q4,-4 8,0"/>
-          <path d="M204,12 q3.5,-3.5 7,0 q3.5,-3.5 7,0"/>
-        </g>
-      </svg>
-      <svg class="hero-wave" viewBox="0 0 380 30" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M0,12 Q19,2 38,12 T76,12 T114,12 T152,12 T190,12 T228,12 T266,12 T304,12 T342,12 T380,12 L380,30 L0,30 Z" fill="var(--bl-400)" opacity=".55"/>
-        <path d="M0,20 Q19,11 38,20 T76,20 T114,20 T152,20 T190,20 T228,20 T266,20 T304,20 T342,20 T380,20 L380,30 L0,30 Z" fill="var(--bl-500)" opacity=".6"/>
-      </svg>
+      <img class="hero-photo" src="https://commons.wikimedia.org/wiki/Special:FilePath/Wat_Arun_from_Chao_Phraya_River_at_sunset.jpg?width=1600" alt="" loading="eager" onerror="this.remove()">
       <div class="hero-copy">
         <p class="hero-kicker">조금 느리게, 조금 더 특별하게</p>
         <p class="hero-eyebrow"><span class="dot"></span> Family Trip · 8박 9일</p>
@@ -127,6 +100,47 @@
           </div>
           <div class="day-story-track" id="dayStoryTrack"></div>
         </div>
+
+        <section class="route-section">
+          <div class="section-header-row">
+            <div>
+              <p class="section-eyebrow">ROUTE MAP</p>
+              <h2 class="section-title">방콕에서 파타야까지,<br>9일의 동선</h2>
+            </div>
+            <p class="route-sub">일차를 누르면 그날의 숙소·장소를 지도에서 바로 확인할 수 있어요</p>
+          </div>
+          <div class="route-body">
+            <div class="route-path" id="routePath"></div>
+            <div class="route-highlights">
+              <p class="route-highlights-label">MUST VISIT</p>
+              <div id="routeHighlights"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="showcase-section">
+          <div class="showcase-row">
+            <div class="showcase-row-head">
+              <p class="section-eyebrow">EAT</p>
+              <h3 class="showcase-row-title">놓치면 아쉬운 맛집</h3>
+            </div>
+            <div class="showcase-grid" id="showcaseFood"></div>
+          </div>
+          <div class="showcase-row">
+            <div class="showcase-row-head">
+              <p class="section-eyebrow">STAY</p>
+              <h3 class="showcase-row-title">머무는 곳</h3>
+            </div>
+            <div class="showcase-grid" id="showcaseStay"></div>
+          </div>
+          <div class="showcase-row">
+            <div class="showcase-row-head">
+              <p class="section-eyebrow">SHOP</p>
+              <h3 class="showcase-row-title">쇼핑 & 마켓</h3>
+            </div>
+            <div class="showcase-grid" id="showcaseShop"></div>
+          </div>
+        </section>
 
         <div class="itin-layout">
           <div class="day-rail" id="dayRail">
@@ -258,9 +272,21 @@
     </section>
 
     <footer class="app-footer">
+      <div class="footer-top">
+        <div class="footer-brand-block">
+          <span class="footer-brand"><svg width="20" height="20"><use href="#i-globe"/></svg> 방콕 · 파타야</span>
+          <p class="footer-tagline">Better Trip, Brighter Memories — 우리 가족만의 여행 기록</p>
+        </div>
+        <div class="footer-links" id="footerLinks">
+          <button type="button" class="footer-link" data-view="itinerary">일정</button>
+          <button type="button" class="footer-link" data-view="expenses">가계부</button>
+          <button type="button" class="footer-link" data-view="gallery">사진</button>
+          <button type="button" class="footer-link" data-view="spots">가볼 곳</button>
+        </div>
+      </div>
       <div class="footer-row">
-        <span class="footer-brand"><svg width="18" height="18"><use href="#i-globe"/></svg> 방콕 · 파타야</span>
-        <span class="footer-meta">2027.01.26 – 02.03 · 일행 전용</span>
+        <span class="footer-meta">2027.01.26 – 02.03 · 8박 9일 · 일행 전용</span>
+        <span class="footer-meta">Made with ♥ for our family trip</span>
       </div>
     </footer>
   </div>

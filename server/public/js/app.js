@@ -29,6 +29,31 @@ const ICON_LABEL = {
 };
 const SPOT_CATEGORIES = ['방콕', '파타야'];
 
+function wmImg(filename, width) {
+  return `https://commons.wikimedia.org/wiki/Special:FilePath/${filename}?width=${width || 640}`;
+}
+// One representative photo per day, for the day-story cards & route map highlights.
+const DAY_PHOTOS = {
+  1: wmImg('Suvarnabhumi_Airport,_Arrival_Hall.JPG'),
+  2: wmImg('Grand_Palace_Bangkok_(Unsplash).jpg'),
+  3: wmImg('Thai-Night-market_wIMG_3912.jpg'),
+  4: wmImg('Pattaya_Floating_Market.JPG'),
+  5: wmImg('Sanctuary_of_Truth_Pattaya.jpg'),
+  6: wmImg('Koh_Samui_Luxury_Villa_Interior.jpg'),
+  7: wmImg('Pattaya_Bay_Panorama.jpg'),
+  8: wmImg('Iconsiam_shopping_mall.jpg'),
+  9: wmImg('Thai_Massage.jpg'),
+};
+// Hotel-name → photo lookup, for the "머무는 곳" showcase row (hotels live on the day record, not in `spots`).
+const HOTEL_PHOTOS = {
+  '더 블레스 호텔 앤 레지던스': wmImg('Hotel_swimming_pool_in_Sukhumvit.jpg'),
+  '호텔 제이 파타야': wmImg('Waterfront_Suites_and_Residence_and_Pattaya_City_sign.jpg'),
+  '더 젬스 풀빌라': wmImg('Koh_Samui_Luxury_Villa_Interior.jpg'),
+  '호텔 뤼 드 시암': wmImg('Shangri-La_Hotel,_Bangkok.JPG'),
+};
+// Curated shopping spots pulled from the existing "가볼 곳" list, by name.
+const SHOP_SPOT_NAMES = ['아이콘시암', '카오산 로드', '조드페어스 야시장'];
+
 function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
@@ -147,6 +172,12 @@ document.getElementById('ctaBannerBtn').addEventListener('click', () => {
   document.querySelector('.tab[data-view="gallery"]').click();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
+document.getElementById('footerLinks')?.addEventListener('click', (e) => {
+  const btn = e.target.closest('.footer-link');
+  if (!btn) return;
+  document.querySelector(`.tab[data-view="${btn.dataset.view}"]`)?.click();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
 
 /* ---------------- Thailand clock ---------------- */
 function updateThailandClock() {
@@ -189,6 +220,8 @@ async function loadSpots() {
   spots = await api.get('/api/spots');
   renderSpots();
   renderMeals();
+  renderRouteMap();
+  renderShowcase();
 }
 
 function spotFormHTML(category, spot) {
@@ -552,9 +585,11 @@ function renderDayStory() {
   track.innerHTML = days.map((d, i) => {
     const firstEv = (d.events || [])[0];
     const tag2 = d.hotel_name ? '숙소 이동' : (firstEv ? (TYPE_LABEL[firstEv.type] || '일정') : '자유일정');
+    const photo = DAY_PHOTOS[d.day_number];
     return `
       <button type="button" class="day-story-card ${d.id === selectedDayId ? 'active' : ''}" data-bg="${(i % 3) + 1}" data-act="story-select" data-id="${d.id}">
         <span class="bg"></span>
+        ${photo ? `<img class="day-photo" src="${photo}" alt="" loading="lazy" onerror="this.remove()">` : ''}
         <span class="content">
           <span class="tag-eyebrow">DAY ${d.day_number}</span>
           <span class="title">${esc(d.title)}</span>
@@ -562,6 +597,79 @@ function renderDayStory() {
         </span>
       </button>`;
   }).join('');
+  renderRouteMap();
+}
+
+/* ---------------- Route map (illustrated day-by-day route + highlights) ---------------- */
+
+function routeLocationFor(day) {
+  if (day.hotel_map_query) return { query: day.hotel_map_query, title: day.hotel_name || day.title };
+  const firstEv = (day.events || []).find((ev) => ev.map_query);
+  if (firstEv) return { query: firstEv.map_query, title: firstEv.name };
+  return null;
+}
+
+function renderRouteMap() {
+  const pathEl = document.getElementById('routePath');
+  const highlightsEl = document.getElementById('routeHighlights');
+  if (!pathEl || !highlightsEl) return;
+
+  let prevCity = null;
+  pathEl.innerHTML = days.map((d) => {
+    const cityMark = d.city !== prevCity ? `<span class="route-city-mark">${esc(CITY_LABEL[d.city] || d.city)}</span>` : '';
+    prevCity = d.city;
+    const loc = routeLocationFor(d);
+    const tag = loc
+      ? `<a class="route-node js-map-link" href="${mapLink(loc.query)}" target="_blank" rel="noopener" data-map-query="${esc(loc.query)}" data-map-title="${esc(loc.title)}">`
+      : `<span class="route-node">`;
+    const closeTag = loc ? '</a>' : '</span>';
+    return `${cityMark}${tag}<span class="route-node-dot">${d.day_number}</span><span class="route-node-label">${esc(d.title)}</span>${closeTag}`;
+  }).join('') || '<p class="empty-hint">등록된 일정이 없습니다.</p>';
+
+  const highlights = spots.filter((s) => s.category !== 'meal').slice(0, 4);
+  highlightsEl.innerHTML = highlights.map((s) => `
+    <a class="route-highlight-item${s.map_query ? ' js-map-link' : ''}" href="${s.map_query ? mapLink(s.map_query) : '#'}" target="_blank" rel="noopener"
+       ${s.map_query ? `data-map-query="${esc(s.map_query)}" data-map-title="${esc(s.name)}"` : ''}>
+      <span class="route-highlight-thumb">${s.image ? `<img src="${esc(s.image)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML=''">` : ''}</span>
+      <span class="route-highlight-info">
+        <span class="route-highlight-name">${esc(s.name)}</span>
+        <span class="route-highlight-sub">${s.day ? `Day ${s.day} · ` : ''}${esc(s.city || '')}</span>
+      </span>
+    </a>`).join('') || '<p class="empty-hint">가볼 곳을 추가하면 여기에 표시됩니다.</p>';
+}
+
+/* ---------------- Food / Stay / Shop showcase rows ---------------- */
+
+function showcaseCardHTML(item) {
+  const inner = `
+    ${item.image ? `<img src="${esc(item.image)}" alt="" loading="lazy" onerror="this.remove()">` : ''}
+    <span class="scrim"></span>
+    <span class="label"><span class="name">${esc(item.name)}</span>${item.sub ? `<span class="sub">${esc(item.sub)}</span>` : ''}</span>`;
+  if (item.mapQuery) {
+    return `<a class="showcase-card js-map-link" href="${mapLink(item.mapQuery)}" target="_blank" rel="noopener" data-map-query="${esc(item.mapQuery)}" data-map-title="${esc(item.name)}">${inner}</a>`;
+  }
+  return `<div class="showcase-card">${inner}</div>`;
+}
+
+function renderShowcase() {
+  const foodEl = document.getElementById('showcaseFood');
+  const stayEl = document.getElementById('showcaseStay');
+  const shopEl = document.getElementById('showcaseShop');
+  if (!foodEl || !stayEl || !shopEl) return;
+
+  const food = spots.filter((s) => s.category === 'meal').slice(0, 3)
+    .map((s) => ({ name: s.name, sub: s.day ? `Day ${s.day} · ${s.city || ''}` : (s.city || ''), image: s.image, mapQuery: s.map_query }));
+  foodEl.innerHTML = food.map(showcaseCardHTML).join('') || '<p class="empty-hint">맛집을 추가하면 여기에 표시됩니다.</p>';
+
+  const stays = days.filter((d) => d.hotel_name).map((d) => ({
+    name: d.hotel_name, sub: `Day ${d.day_number} · ${CITY_LABEL[d.city] || d.city}`,
+    image: HOTEL_PHOTOS[d.hotel_name], mapQuery: d.hotel_map_query,
+  }));
+  stayEl.innerHTML = stays.map(showcaseCardHTML).join('') || '<p class="empty-hint">숙소 정보가 없습니다.</p>';
+
+  const shop = SHOP_SPOT_NAMES.map((n) => spots.find((s) => s.name === n)).filter(Boolean)
+    .map((s) => ({ name: s.name, sub: s.day ? `Day ${s.day} · ${s.city || ''}` : (s.city || ''), image: s.image, mapQuery: s.map_query }));
+  shopEl.innerHTML = shop.map(showcaseCardHTML).join('') || '<p class="empty-hint">쇼핑 장소를 추가하면 여기에 표시됩니다.</p>';
 }
 
 const dayStoryPrevBtn = document.getElementById('dayStoryPrev');
@@ -610,6 +718,7 @@ async function loadDays() {
   renderDayRail();
   renderDayPanel();
   renderDayStory();
+  renderShowcase();
   populateDaySelect();
   updateDday();
 }
