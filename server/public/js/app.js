@@ -655,6 +655,83 @@ async function loadRouteSummary(elId, queries) {
   }
 }
 
+/* ---------------- Google Maps JS API (interactive route map w/ numbered pins) ----------------
+ * The Embed API (plain iframe, used elsewhere for single-place links) can't customize its
+ * markers, so route maps use the JS API instead: we render our own map + DirectionsRenderer
+ * and add a numbered marker per stop, matching the numbers in the stop list above it. */
+
+let mapsJsPromise = null;
+function loadGoogleMapsJs() {
+  if (window.google && window.google.maps) return Promise.resolve();
+  if (!mapsApiKey) return Promise.reject(new Error('no maps key'));
+  if (!mapsJsPromise) {
+    mapsJsPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(mapsApiKey)}&loading=async`;
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => { mapsJsPromise = null; reject(new Error('Google Maps JS 로드 실패')); };
+      document.head.appendChild(script);
+    });
+  }
+  return mapsJsPromise;
+}
+
+// Renders an interactive map with the driving route + a numbered pin per stop (1, 2, 3...,
+// matching the stop list) into the given container. Fails silently on any error — the
+// plain-link fallback shown alongside it already covers the no-key/broken-key case.
+async function renderNumberedRouteMap(containerId, stops) {
+  const container = document.getElementById(containerId);
+  if (!container || !mapsApiKey || stops.length < 2) return;
+
+  // init() kicks off several loaders concurrently (loadDays/loadSpots/loadConfig), and
+  // more than one of them can end up calling back into this same container once the
+  // Maps key is known. Skip re-rendering (and re-billing the Directions API) when the
+  // stop list hasn't actually changed since the last call.
+  const signature = stops.map((s) => s.query).join('|');
+  if (container.dataset.routeSignature === signature) return;
+  container.dataset.routeSignature = signature;
+
+  try {
+    await loadGoogleMapsJs();
+  } catch (e) { return; }
+  // Bail if the panel was re-rendered (container gone) or a newer call for this same
+  // container has since taken over (stops changed again while we were loading).
+  if (!container.isConnected || container.dataset.routeSignature !== signature) return;
+
+  const map = new google.maps.Map(container, { center: { lat: 13.75, lng: 100.6 }, zoom: 10 });
+  const directionsService = new google.maps.DirectionsService();
+  const directionsRenderer = new google.maps.DirectionsRenderer({ map, suppressMarkers: true });
+  const waypoints = stops.slice(1, -1).map((s) => ({ location: s.query, stopover: true }));
+
+  directionsService.route({
+    origin: stops[0].query,
+    destination: stops[stops.length - 1].query,
+    waypoints,
+    travelMode: google.maps.TravelMode.DRIVING,
+  }, (result, status) => {
+    if (status !== google.maps.DirectionsStatus.OK) return;
+    if (!container.isConnected || container.dataset.routeSignature !== signature) return;
+    directionsRenderer.setDirections(result);
+
+    const badgeColor = getComputedStyle(document.documentElement).getPropertyValue('--bl-700').trim() || '#3a6ea8';
+    const legs = result.routes[0].legs;
+    const points = [legs[0].start_location, ...legs.map((l) => l.end_location)];
+    points.forEach((pos, i) => {
+      new google.maps.Marker({
+        position: pos,
+        map,
+        title: stops[i] ? stops[i].title : '',
+        label: { text: String(i + 1), color: '#fff', fontWeight: '700', fontSize: '11px' },
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE, scale: 13,
+          fillColor: badgeColor, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2,
+        },
+      });
+    });
+  });
+}
+
 function routeLocationFor(day) {
   if (day.hotel_map_query) return { query: day.hotel_map_query, title: day.hotel_name || day.title };
   const firstEv = (day.events || []).find((ev) => ev.map_query);
@@ -699,12 +776,12 @@ function renderRouteMap() {
 // the rest of the app's map links).
 function renderRouteMapEmbed() {
   const wrap = document.getElementById('routeMapEmbed');
-  const frame = document.getElementById('routeMapFrame');
+  const canvas = document.getElementById('routeMapCanvas');
   const fallback = document.getElementById('routeMapFallback');
   const fallbackLink = document.getElementById('routeMapFallbackLink');
-  if (!wrap || !frame) return;
+  if (!wrap || !canvas) return;
 
-  const stops = days.map(routeLocationFor).filter(Boolean).map((l) => l.query);
+  const stops = days.map(routeLocationFor).filter(Boolean);
   if (stops.length < 2) {
     wrap.hidden = true;
     if (fallback) fallback.hidden = true;
@@ -713,23 +790,17 @@ function renderRouteMapEmbed() {
 
   if (!mapsApiKey) {
     wrap.hidden = true;
-    frame.src = '';
     if (fallback) {
       fallback.hidden = false;
-      if (fallbackLink) fallbackLink.href = `https://www.google.com/maps/dir/${stops.map(encodeURIComponent).join('/')}`;
+      if (fallbackLink) fallbackLink.href = `https://www.google.com/maps/dir/${stops.map((s) => encodeURIComponent(s.query)).join('/')}`;
     }
     return;
   }
 
-  const origin = stops[0];
-  const destination = stops[stops.length - 1];
-  const waypoints = stops.slice(1, -1).slice(0, 8); // Embed API practical waypoint limit
-  const params = new URLSearchParams({ key: mapsApiKey, origin, destination, mode: 'driving' });
-  if (waypoints.length) params.set('waypoints', waypoints.join('|'));
-  frame.src = `https://www.google.com/maps/embed/v1/directions?${params.toString()}`;
   wrap.hidden = false;
   if (fallback) fallback.hidden = true;
-  loadRouteSummary('routeMapSummary', stops);
+  renderNumberedRouteMap('routeMapCanvas', stops);
+  loadRouteSummary('routeMapSummary', stops.map((s) => s.query));
 }
 
 /* ---------------- Food / Stay / Shop showcase rows ---------------- */
@@ -835,13 +906,8 @@ function dayRouteCardHTML(day) {
 
   let body;
   if (mapsApiKey) {
-    const origin = queries[0];
-    const destination = queries[queries.length - 1];
-    const waypoints = queries.slice(1, -1).slice(0, 8);
-    const params = new URLSearchParams({ key: mapsApiKey, origin, destination, mode: 'driving' });
-    if (waypoints.length) params.set('waypoints', waypoints.join('|'));
     body = `
-      <div class="day-route-embed"><iframe src="https://www.google.com/maps/embed/v1/directions?${params.toString()}" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe></div>
+      <div class="day-route-embed"><div class="day-route-canvas" id="dayRouteCanvas${day.id}"></div></div>
       <p class="day-route-summary" id="dayRouteSummary${day.id}"></p>`;
   } else {
     const link = `https://www.google.com/maps/dir/${queries.map(encodeURIComponent).join('/')}`;
@@ -877,6 +943,7 @@ function renderDayPanel() {
     </div>`;
 
   const dayStops = dayRouteStops(day);
+  if (mapsApiKey) renderNumberedRouteMap(`dayRouteCanvas${day.id}`, dayStops);
   loadDayRouteLegs(day, dayStops.map((s) => s.query));
 }
 
