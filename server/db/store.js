@@ -7,10 +7,11 @@ const FILE = path.join(dataDir, 'trip.json');
 
 function emptyState() {
   return {
-    nextIds: { days: 1, events: 1, expenses: 1, images: 1 },
+    nextIds: { days: 1, events: 1, expenses: 1, images: 1, spots: 1 },
     days: [],
     expenses: [],
     images: [],
+    spots: [],
   };
 }
 
@@ -25,6 +26,9 @@ function load() {
 }
 
 let state = load();
+// Migrate trip.json files saved before the `spots` collection existed.
+if (!state.spots) state.spots = [];
+if (!state.nextIds.spots) state.nextIds.spots = 1;
 
 function persist() {
   // Write to a temp file then rename, so a crash mid-write can't corrupt trip.json.
@@ -255,7 +259,12 @@ function deleteImage(id) {
 
 function seedIfEmpty(seedDays) {
   if (state.days.length > 0) return;
+  // Preserve any collections seeded by a different seed*IfEmpty call before this one.
+  const preservedSpots = state.spots;
+  const preservedNextSpots = state.nextIds.spots;
   state = emptyState();
+  state.spots = preservedSpots;
+  state.nextIds.spots = preservedNextSpots;
   seedDays.forEach((d, i) => {
     const day = {
       id: nextId('days'),
@@ -289,10 +298,79 @@ function seedIfEmpty(seedDays) {
   console.log('Seeded itinerary with', seedDays.length, 'days.');
 }
 
+function seedSpotsIfEmpty(seedSpots) {
+  if (state.spots.length > 0) return;
+  seedSpots.forEach((s, i) => {
+    state.spots.push({
+      id: nextId('spots'),
+      category: s.category === 'meal' ? 'meal' : 'place',
+      day: s.day || null,
+      city: s.city || '',
+      name: s.name,
+      note: s.note || '',
+      map_query: s.map || null,
+      tint: s.tint || 'bl-100',
+      sort_order: i,
+      created_at: new Date().toISOString(),
+    });
+  });
+  persist();
+  console.log('Seeded', seedSpots.length, 'spots/meals.');
+}
+
+/* ---------------- Spots & meals (user-editable "가볼 곳" / "맛집" lists) ---------------- */
+
+const SPOT_TINTS = ['bl-200', 'bl-100', 'sand', 'bl-300'];
+
+function getSpots() {
+  return state.spots.slice().sort((a, b) => a.sort_order - b.sort_order);
+}
+
+function createSpot(fields) {
+  const maxOrder = state.spots.reduce((m, s) => Math.max(m, s.sort_order), -1);
+  const spot = {
+    id: nextId('spots'),
+    category: fields.category === 'meal' ? 'meal' : 'place',
+    day: fields.day ? Number(fields.day) : null,
+    city: fields.city || '',
+    name: fields.name || '새 장소',
+    note: fields.note || '',
+    map_query: fields.map_query || null,
+    tint: SPOT_TINTS[(maxOrder + 1) % SPOT_TINTS.length],
+    sort_order: maxOrder + 1,
+    created_at: new Date().toISOString(),
+  };
+  state.spots.push(spot);
+  persist();
+  return spot;
+}
+
+function updateSpot(id, fields) {
+  const spot = state.spots.find((s) => s.id === Number(id));
+  if (!spot) return null;
+  const editable = ['city', 'name', 'note', 'map_query'];
+  editable.forEach((k) => {
+    if (fields[k] !== undefined) spot[k] = fields[k];
+  });
+  if (fields.category !== undefined) spot.category = fields.category === 'meal' ? 'meal' : 'place';
+  if (fields.day !== undefined) spot.day = fields.day ? Number(fields.day) : null;
+  persist();
+  return spot;
+}
+
+function deleteSpot(id) {
+  const idx = state.spots.findIndex((s) => s.id === Number(id));
+  if (idx === -1) return false;
+  state.spots.splice(idx, 1);
+  persist();
+  return true;
+}
+
 module.exports = {
   getDays, getDay, createDay, updateDay, deleteDay,
   createEvent, updateEvent, deleteEvent,
   getExpenses, getExpenseSummary, createExpense, updateExpense, deleteExpense,
   getImages, createImage, deleteImage,
-  seedIfEmpty,
+  getSpots, createSpot, updateSpot, deleteSpot,
+  seedIfEmpty, seedSpotsIfEmpty,
 };
